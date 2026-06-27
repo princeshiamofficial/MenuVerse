@@ -365,62 +365,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Sticky Profile Navigation Tabs Bar */}
-        <div className="sticky top-0 z-35 w-full bg-[#f0f2f5] border-b border-neutral-200 shadow-sm">
-          <div className="max-w-6xl mx-auto relative">
-            <div className="border-t border-neutral-200/80 px-6 sm:px-8 bg-white flex items-center justify-between gap-4 w-full">
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-none">
-                {[
-                  { id: "menu", label: "Menu Items" },
-                  { id: "about", label: "About" },
-                  { id: "reviews", label: "Reviews" }
-                ].map((tab) => {
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={`relative py-3.5 px-3.5 text-xs sm:text-sm font-bold tracking-tight cursor-pointer whitespace-nowrap outline-none transition-colors ${isActive
-                          ? "text-emerald-700 font-extrabold"
-                          : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800"
-                        }`}
-                    >
-                      <span>{tab.label}</span>
-                      {isActive && (
-                        <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-700 rounded-t-full" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
 
-              {/* Right side search option */}
-              {activeTab === "menu" && (
-                <div className="relative flex items-center shrink-0 my-1">
-                  <div className="absolute left-3 text-neutral-400 pointer-events-none">
-                    <Search className="w-3.5 h-3.5" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search menu..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-neutral-50 hover:bg-neutral-100/70 focus:bg-white text-xs font-semibold text-neutral-800 placeholder-neutral-400 pl-9 pr-8 py-1.5 rounded-full border border-neutral-200 focus:border-emerald-600 outline-none w-36 sm:w-48 md:w-56 transition-all duration-200"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-2.5 w-4 h-4 rounded-full bg-neutral-200/50 hover:bg-neutral-200 flex items-center justify-center text-[8px] text-neutral-500 transition-colors"
-                      title="Clear search"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
 
         <div className={`w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 mt-6 flex flex-col md:flex-row gap-6 items-start ${
           totalItems > 0 ? "pb-48 md:pb-48" : "pb-36 md:pb-32"
@@ -471,6 +416,27 @@ export default function RestaurantMenuPage({ params }: PageProps) {
             {activeTab === "menu" && (
               <div className="flex flex-col gap-4 w-full">
 
+                {/* Search Bar */}
+                <div className="relative flex items-center w-full bg-white border border-neutral-200/80 rounded-2xl px-4 py-3 shadow-sm">
+                  <div className="text-neutral-400 mr-2.5">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search dishes or categories..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none outline-none text-sm w-full text-neutral-800 placeholder-neutral-400 font-semibold"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="w-5 h-5 rounded-full bg-neutral-100 hover:bg-neutral-200 flex items-center justify-center text-neutral-450 hover:text-neutral-700 transition-colors cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
 
                 {/* Food Items List */}
                 {filteredItems.length === 0 ? (
