@@ -350,7 +350,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
             </div>
 
             {/* White info area overlapping cover photo */}
-            <div className="bg-white rounded-t-2xl sm:rounded-t-3xl -mt-10 sm:-mt-16 md:-mt-20 pt-3 relative z-35 shadow-md">
+            <div className="bg-white rounded-t-2xl sm:rounded-t-3xl -mt-10 sm:-mt-16 md:-mt-20 pt-3 relative z-35 shadow-[0_10px_15px_-3px_rgba(0,0,0,0.03)]">
 
               {/* Profile Details Row */}
               <div className="px-3 sm:px-8 pb-3 flex items-center justify-between gap-5">
@@ -585,7 +585,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
               <div className="flex flex-col gap-4 w-full">
 
                 {/* Mobile Search Bar */}
-                <div className="block md:hidden w-[65%] max-w-[240px] ml-auto -mr-4 relative z-36 -mt-1.5">
+                <div className="block md:hidden w-[65%] max-w-[240px] ml-auto -mr-4 relative z-36 mt-0">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="h-4 w-4 text-neutral-400" />
                   </span>
