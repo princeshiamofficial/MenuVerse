@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, use } from "react";
+import React, { useState, useMemo, use, useEffect } from "react";
 import Image from "next/image";
 import { notFound, useSearchParams } from "next/navigation";
 
@@ -156,6 +156,20 @@ export default function RestaurantMenuPage({ params }: PageProps) {
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
   const [orders, setOrders] = useState<Array<{ id: string; items: any[]; time: string; status: string; total: number }>>([]);
+  const [isCategoriesSticky, setIsCategoriesSticky] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 310) {
+        setIsCategoriesSticky(true);
+      } else {
+        setIsCategoriesSticky(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Trigger Toast notifications
   const triggerToast = (msg: string) => {
@@ -539,23 +553,40 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                 </div>
 
                 {/* Category Selector Pills */}
-                <div className="flex gap-2 overflow-x-auto pt-1 pb-2 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 scroll-smooth sticky top-0 md:relative md:top-auto z-30 bg-[#f0f2f5] -mt-3 md:mt-0">
-                  {categories.map((cat) => {
-                    const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
-                    return (
-                      <button
-                        key={cat}
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`px-4 py-2 text-xs font-bold rounded-full border whitespace-nowrap transition-all duration-200 cursor-pointer active:scale-95 shrink-0 ${
-                          isActive
-                            ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                            : "bg-white text-neutral-650 hover:text-neutral-900 border-neutral-200/80 hover:bg-neutral-50"
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
+                <div className={`flex flex-col gap-1.5 sticky top-0 md:relative md:top-auto z-30 bg-[#f0f2f5] transition-all duration-150 ${
+                  isCategoriesSticky 
+                    ? "pt-4 pb-2 -mx-4 px-4 border-b border-neutral-200/50 shadow-sm mt-0" 
+                    : "pt-1.5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 -mt-3 md:mt-0"
+                }`}>
+                  {isCategoriesSticky && (
+                    <div className="flex items-center justify-between px-0.5 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <span className="text-xs font-black text-neutral-900 tracking-tight leading-none uppercase">
+                        {restaurant.name}
+                      </span>
+                      <span className="text-[10px] font-black text-emerald-700 leading-none">
+                        Table #{tableNumber}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 overflow-x-auto scrollbar-none w-full scroll-smooth">
+                    {categories.map((cat) => {
+                      const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
+                      return (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`px-4 py-2 text-xs font-bold rounded-full border whitespace-nowrap transition-all duration-200 cursor-pointer active:scale-95 shrink-0 ${
+                            isActive
+                              ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                              : "bg-white text-neutral-650 hover:text-neutral-900 border-neutral-200/80 hover:bg-neutral-50"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Food Items List */}
