@@ -315,7 +315,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
         <div className="w-full bg-[#f0f2f5] shadow-sm">
           <div className="max-w-6xl mx-auto relative">
             {/* Cover image wrap */}
-            <div className="relative w-full h-[180px] sm:h-[300px] md:h-[350px] overflow-hidden bg-neutral-200 md:rounded-b-xl">
+            <div className="relative w-full h-[126px] sm:h-[210px] md:h-[245px] overflow-hidden bg-neutral-200 md:rounded-b-xl">
               <Image
                 src={restaurant.image}
                 alt={restaurant.name}
