@@ -173,6 +173,11 @@ export default function RestaurantMenuPage({ params }: PageProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Scroll to top when active tab changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
+
   // Trigger Toast notifications
   const triggerToast = (msg: string) => {
     setActionToast(msg);
