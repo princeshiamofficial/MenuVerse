@@ -23,7 +23,8 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
-  Utensils
+  Utensils,
+  ClipboardList
 } from "lucide-react";
 
 interface PageProps {
@@ -130,7 +131,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
   }
 
   // Active Tab state (Facebook profile style: Menu, About, Reviews)
-  const [activeTab, setActiveTab] = useState<"menu" | "about" | "reviews">("menu");
+  const [activeTab, setActiveTab] = useState<"menu" | "about" | "reviews" | "orders">("menu");
 
   // Follower interaction states
   const [isFollowing, setIsFollowing] = useState(false);
@@ -154,6 +155,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
   const [isCartExpanded, setIsCartExpanded] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [actionToast, setActionToast] = useState<string | null>(null);
+  const [orders, setOrders] = useState<Array<{ id: string; items: any[]; time: string; status: string; total: number }>>([]);
 
   // Trigger Toast notifications
   const triggerToast = (msg: string) => {
@@ -245,30 +247,37 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
   // Trigger simulated order submission
   const handlePlaceOrder = () => {
+    const orderId = `#O-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newOrder = {
+      id: orderId,
+      items: [...cartItemsList],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: "Preparing in Kitchen",
+      total: totalPrice
+    };
+    setOrders((prev) => [newOrder, ...prev]);
     setOrderPlaced(true);
     setCart({});
     setIsCartExpanded(false);
+    setActiveTab("orders");
     triggerToast(`Order placed successfully for Table #${tableNumber}!`);
   };
 
   const leftNavItems = [
     {
-      id: "bill",
-      label: "Bill",
-      icon: BillIcon,
+      id: "orders",
+      label: "Orders",
+      icon: ClipboardList,
       onClick: () => {
-        if (totalItems > 0) {
-          handlePlaceOrder();
-        } else {
-          triggerToast("Your selection is empty! Add items from the Menu.");
-        }
+        setActiveTab("orders");
+        setIsCartExpanded(false);
       },
-      isActive: false
+      isActive: activeTab === "orders" && !isCartExpanded
     },
     {
-      id: "list",
-      label: "List",
-      icon: ListIcon,
+      id: "menu",
+      label: "Menu",
+      icon: Utensils,
       onClick: () => {
         setActiveTab("menu");
         setIsCartExpanded(false);
@@ -279,22 +288,19 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
   const rightNavItems = [
     {
-      id: "bag",
-      label: "Bag",
-      icon: BagIcon,
+      id: "reviews",
+      label: "Reviews",
+      icon: Star,
       onClick: () => {
-        if (totalItems > 0) {
-          setIsCartExpanded(!isCartExpanded);
-        } else {
-          triggerToast("Your bag is empty! Add items from the Menu.");
-        }
+        setActiveTab("reviews");
+        setIsCartExpanded(false);
       },
-      isActive: isCartExpanded
+      isActive: activeTab === "reviews" && !isCartExpanded
     },
     {
-      id: "my",
-      label: "My",
-      icon: MyIcon,
+      id: "about",
+      label: "About",
+      icon: Info,
       onClick: () => {
         setActiveTab("about");
         setIsCartExpanded(false);
@@ -408,6 +414,21 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                       <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
                     )}
                   </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("orders");
+                      setIsCartExpanded(false);
+                    }}
+                    className={`py-4 px-4 text-sm font-bold relative transition-colors cursor-pointer ${activeTab === "orders"
+                        ? "text-emerald-600 font-extrabold"
+                        : "text-neutral-500 hover:text-neutral-800"
+                      }`}
+                  >
+                    Orders
+                    {activeTab === "orders" && (
+                      <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
+                    )}
+                  </button>
                 </div>
 
                 {/* Desktop Search Bar Option */}
@@ -447,11 +468,11 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
 
 
-        <div className={`w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 mt-0 md:mt-6 flex flex-col md:flex-row gap-6 items-start ${totalItems > 0 ? "pb-48 md:pb-48" : "pb-36 md:pb-32"
+        <div className={`w-full max-w-6xl mx-auto px-4 sm:px-6 md:px-8 ${activeTab === "menu" ? "mt-0" : "mt-3"} md:mt-6 flex flex-col md:flex-row gap-6 items-start ${totalItems > 0 ? "pb-48 md:pb-48" : "pb-36 md:pb-32"
           }`}>
 
           {/* LEFT SIDEBAR: Intro Card Box */}
-          {activeTab !== "menu" && (
+          {activeTab === "about" && (
             <div className="w-full md:w-[350px] shrink-0 flex flex-col gap-4 text-left">
               {/* Intro Card */}
               <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 shadow-sm flex flex-col gap-4">
@@ -496,7 +517,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
               <div className="flex flex-col gap-4 w-full">
 
                 {/* Mobile Search Bar */}
-                <div className="block md:hidden w-[65%] max-w-[240px] ml-auto -mr-4 sticky top-14 z-30 mt-0">
+                <div className="block md:hidden w-[65%] max-w-[240px] ml-auto -mr-4 relative z-20 mt-0">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="h-4 w-4 text-neutral-400" />
                   </span>
@@ -765,6 +786,69 @@ export default function RestaurantMenuPage({ params }: PageProps) {
               </div>
             )}
 
+            {/* TAB CONTENT: Orders List */}
+            {activeTab === "orders" && (
+              <div className="flex flex-col gap-4 w-full text-left">
+                <div className="bg-white rounded-2xl border border-neutral-200/80 p-5 sm:p-6 shadow-sm flex flex-col gap-5">
+                  <h3 className="text-base sm:text-lg font-black text-neutral-900 tracking-tight flex items-center gap-2 border-b border-neutral-100 pb-3">
+                    <ClipboardList className="w-5 h-5 text-emerald-600" />
+                    <span>Your Orders</span>
+                  </h3>
+
+                  {orders.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center gap-4">
+                      <ClipboardList className="w-12 h-12 text-neutral-300 animate-pulse" />
+                      <h4 className="text-base font-bold text-neutral-800">No active orders yet</h4>
+                      <p className="text-xs sm:text-sm text-neutral-500 max-w-xs font-semibold leading-relaxed">
+                        Add delicious items from our menu to your bag and place your order!
+                      </p>
+                      <button
+                        onClick={() => setActiveTab("menu")}
+                        className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-full cursor-pointer transition-colors shadow-sm active:scale-95 duration-150"
+                      >
+                        Browse Menu
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {orders.map((order) => (
+                        <div key={order.id} className="bg-neutral-50 border border-neutral-200/70 rounded-2xl p-4 flex flex-col gap-3 shadow-sm">
+                          <div className="flex items-center justify-between border-b border-neutral-200/40 pb-2">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-black text-neutral-800">{order.id}</span>
+                              <span className="text-[10px] font-bold text-neutral-400 mt-0.5">{order.time}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                              <span className="text-[10px] font-black text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                {order.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {order.items.map((itemEntry) => (
+                              <div key={itemEntry.item.id} className="flex justify-between items-center text-xs text-neutral-600">
+                                <span className="font-semibold">
+                                  {itemEntry.item.name} <span className="text-neutral-400 font-bold ml-1">x{itemEntry.quantity}</span>
+                                </span>
+                                <span className="font-bold text-neutral-800">${(itemEntry.item.price * itemEntry.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="border-t border-neutral-200/40 pt-2.5 flex justify-between items-center font-bold text-sm text-neutral-800">
+                            <span>Total Amount</span>
+                            <span className="text-emerald-700 font-black">${order.total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
 
         </div>
@@ -929,13 +1013,19 @@ export default function RestaurantMenuPage({ params }: PageProps) {
           <div className="relative w-[72px] h-full flex justify-center items-start">
             <button
               onClick={() => {
-                setActiveTab("reviews");
-                setIsCartExpanded(false);
+                if (totalItems > 0) {
+                  setIsCartExpanded(!isCartExpanded);
+                }
               }}
               className="absolute -top-5 w-14 h-14 bg-[#1a1a1a] hover:bg-black rounded-full flex items-center justify-center shadow-lg active:scale-90 transition-all duration-255 cursor-pointer group"
-              title="Reviews"
+              title="Cart"
             >
-              <CalendarIcon className="w-5 h-5 text-white transition-transform group-hover:scale-105" />
+              <ShoppingBag className="w-5 h-5 text-white transition-transform group-hover:scale-105" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9.5px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1a1a1a] shadow-sm animate-in zoom-in duration-200">
+                  {totalItems}
+                </span>
+              )}
             </button>
           </div>
 
