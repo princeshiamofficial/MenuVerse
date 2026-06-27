@@ -593,7 +593,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                             </div>
 
                             {/* Button Card — keeps top gap */}
-                            <div className="mt-1 bg-white rounded-xl border border-neutral-200/80 shadow-sm flex items-center justify-center h-10 group-hover:border-neutral-300 transition-colors duration-300">
+                            <div className="mt-1 bg-white rounded-xl rounded-tl-none border border-neutral-200/80 shadow-sm flex items-center justify-center h-10 group-hover:border-neutral-300 transition-colors duration-300">
                               {qtyInCart > 0 ? (
                                 <div className="flex items-center gap-1.5 px-2.5">
                                   <button
