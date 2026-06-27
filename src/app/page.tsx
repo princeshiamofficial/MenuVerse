@@ -310,25 +310,22 @@ export default function Home() {
       <main className="flex-1 w-full pb-0 relative z-10">
 
         {/* Luxury Hero Card - Full Width (40% Shorter Height on Mobile) */}
-        {false && (
-          <div className="relative w-full h-[280px] md:h-[600px] overflow-hidden bg-zinc-200 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-            {/* Hero Background Image - premium_living_room.png */}
-            <Image
-              src="/premium_living_room.png"
-              alt="Premium Living Room Showcase"
-              fill
-              className="object-cover object-center"
-              priority
-            />
-          </div>
-        )}
+        <div className="relative w-full h-[280px] md:h-[600px] overflow-hidden bg-zinc-200 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
+          {/* Hero Background Image - premium_living_room.png */}
+          <Image
+            src="/premium_living_room.png"
+            alt="Premium Living Room Showcase"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+        </div>
 
         {/* Breathtaking Curated Storefront Grid - Overlapping the Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-24 md:mt-28 pb-12 relative z-20 bg-white rounded-[32px] p-3 md:p-5 border border-neutral-100 shadow-[0_25px_60px_rgba(0,0,0,0.03)] flex flex-col gap-3 md:gap-5">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 -mt-24 md:-mt-28 pb-12 relative z-20 bg-white rounded-[32px] p-3 md:p-5 border border-neutral-100 shadow-[0_25px_60px_rgba(0,0,0,0.03)] flex flex-col gap-3 md:gap-5">
 
           {/* Store Sub-header with Search Bar */}
-          {false && (
-            <div className="flex flex-col items-center md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-neutral-100">
+          <div className="flex flex-col items-center md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-neutral-100">
               <div className="flex items-center justify-between md:justify-start gap-4 w-full md:w-auto order-2 md:order-1">
                 <h2 className="text-2xl md:text-[32px] font-medium tracking-tight text-neutral-950 font-sans truncate">
                   Popular Restaurants
@@ -413,11 +410,9 @@ export default function Home() {
                 </button>
               </form>
             </div>
-          )}
 
           {/* Popular Restaurants Grid */}
-          {false && (
-            <div className="w-full">
+          <div className="w-full">
               {filteredRestaurants.length === 0 ? (
                 <div className="text-center py-20 bg-neutral-50 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center gap-4">
                   <svg
@@ -588,7 +583,6 @@ export default function Home() {
                 </div>
               )}
             </div>
-          )}
 
           {/* All Restaurants section */}
           <div className="flex flex-col gap-3 sm:gap-4 w-full">
@@ -766,14 +760,14 @@ export default function Home() {
           </div>
 
           {/* How It Works Section */}
-          <div className="flex flex-col gap-8 sm:gap-12 p-6 sm:p-10 mt-4 sm:mt-8 bg-neutral-50/65 rounded-[32px] border border-neutral-100/60 w-full relative">
+          <div className="flex flex-col gap-8 sm:gap-12 px-4 py-8 sm:p-10 mt-4 sm:mt-8 bg-neutral-50/65 rounded-none sm:rounded-[32px] border-x-0 border-y sm:border border-neutral-100/60 w-[calc(100%+24px)] -mx-3 sm:w-full sm:mx-0 relative">
             {/* Section Header */}
             <div className="flex flex-col items-center text-center gap-2.5 max-w-3xl mx-auto">
               <h3 className="text-2xl sm:text-3xl md:text-[32px] font-medium tracking-tight text-neutral-950 font-sans">
-                How It Works — Three Steps to Digital Ordering
+                How It Works
               </h3>
               <p className="text-sm sm:text-base text-neutral-500 font-medium max-w-2xl">
-                Streamline operations and elevate user experience with our end-to-end QR code dining solution.
+                Streamline operations and elevate the dining experience.
               </p>
             </div>
 
@@ -796,7 +790,7 @@ export default function Home() {
               </div>
 
               {/* Card 1 */}
-              <div className="flex flex-col items-start text-left bg-white border border-neutral-200/50 rounded-[32px] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1.5 transition-all duration-300 relative group overflow-hidden min-h-[380px]">
+              <div className="flex flex-col items-start text-left bg-white border border-neutral-200/50 rounded-[32px] p-3 sm:p-4 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1.5 transition-all duration-300 relative group overflow-hidden min-h-[190px]">
                 {/* Large Background Step Number */}
                 <span className="text-[90px] font-black text-neutral-100/50 absolute top-2 right-6 select-none pointer-events-none group-hover:text-emerald-500/10 transition-colors duration-300 font-mono leading-none">
                   01
@@ -836,7 +830,7 @@ export default function Home() {
               </div>
 
               {/* Card 2 */}
-              <div className="flex flex-col items-start text-left bg-white border border-neutral-200/50 rounded-[32px] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1.5 transition-all duration-300 relative group overflow-hidden min-h-[380px]">
+              <div className="flex flex-col items-start text-left bg-white border border-neutral-200/50 rounded-[32px] p-3 sm:p-4 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1.5 transition-all duration-300 relative group overflow-hidden min-h-[190px]">
                 {/* Large Background Step Number */}
                 <span className="text-[90px] font-black text-neutral-100/50 absolute top-2 right-6 select-none pointer-events-none group-hover:text-emerald-500/10 transition-colors duration-300 font-mono leading-none">
                   02
@@ -876,7 +870,7 @@ export default function Home() {
               </div>
 
               {/* Card 3 */}
-              <div className="flex flex-col items-start text-left bg-white border border-neutral-200/50 rounded-[32px] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1.5 transition-all duration-300 relative group overflow-hidden min-h-[380px]">
+              <div className="flex flex-col items-start text-left bg-white border border-neutral-200/50 rounded-[32px] p-3 sm:p-4 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:-translate-y-1.5 transition-all duration-300 relative group overflow-hidden min-h-[190px]">
                 {/* Large Background Step Number */}
                 <span className="text-[90px] font-black text-neutral-100/50 absolute top-2 right-6 select-none pointer-events-none group-hover:text-emerald-500/10 transition-colors duration-300 font-mono leading-none">
                   03
@@ -919,14 +913,14 @@ export default function Home() {
           </div>
 
           {/* Features Section */}
-          <div className="flex flex-col gap-8 sm:gap-12 p-6 sm:p-10 mt-4 sm:mt-8 bg-neutral-50/65 rounded-[32px] border border-neutral-100/60 w-full">
+          <div className="flex flex-col gap-8 sm:gap-12 px-4 py-8 sm:p-10 mt-4 sm:mt-8 bg-neutral-50/65 rounded-none sm:rounded-[32px] border-x-0 border-y sm:border border-neutral-100/60 w-[calc(100%+24px)] -mx-3 sm:w-full sm:mx-0">
             {/* Section Header */}
             <div className="flex flex-col items-center text-center gap-2.5 max-w-3xl mx-auto">
               <h3 className="text-2xl sm:text-3xl md:text-[32px] font-bold tracking-tight text-neutral-950 font-sans">
-                Why 500+ Restaurants Trust Us
+                Why Trust Us
               </h3>
               <p className="text-sm sm:text-base text-neutral-500 font-medium max-w-2xl">
-                Elevate your dining experience and streamline kitchen operations with a comprehensive suite of features built specifically for modern food businesses.
+                Elevate dining experiences and streamline kitchen operations.
               </p>
             </div>
 
@@ -934,7 +928,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 w-full px-2 sm:px-6 md:px-0">
 
               {/* Card 1: Real-time Kitchen Display */}
-              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
+              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-rose-50/70 text-rose-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <Monitor className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
@@ -951,7 +945,7 @@ export default function Home() {
               </div>
 
               {/* Card 2: Digital Menu Management */}
-              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
+              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-orange-50/70 text-orange-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <BookOpen className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
@@ -968,7 +962,7 @@ export default function Home() {
               </div>
 
               {/* Card 3: Online Ordering System */}
-              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
+              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-emerald-50/70 text-emerald-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <ShoppingCart className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
@@ -985,7 +979,7 @@ export default function Home() {
               </div>
 
               {/* Card 4: Secure Payments (bKash) */}
-              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
+              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-pink-50/70 text-pink-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <CreditCard className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
@@ -1002,7 +996,7 @@ export default function Home() {
               </div>
 
               {/* Card 5: Sales Analytics */}
-              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
+              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-50/70 text-blue-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <TrendingUp className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
@@ -1019,7 +1013,7 @@ export default function Home() {
               </div>
 
               {/* Card 6: Staff Management */}
-              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-8 sm:p-10 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
+              <div className="flex flex-col bg-white border border-neutral-100/80 rounded-[32px] p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_24px_50px_rgba(0,0,0,0.04)] hover:-translate-y-1.5 transition-all duration-300 h-full group text-left">
                 <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-purple-50/70 text-purple-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <Users className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
@@ -1044,10 +1038,10 @@ export default function Home() {
             <div className="flex items-end justify-between w-full max-w-7xl mx-auto px-2 sm:px-6 md:px-0">
               <div className="flex flex-col items-start text-left gap-2">
                 <h3 className="text-2xl sm:text-3xl md:text-[32px] font-medium tracking-tight text-neutral-950 font-sans">
-                  What Restaurants Say
+                  What They Say
                 </h3>
                 <p className="text-sm sm:text-base text-neutral-500 font-medium max-w-xl">
-                  Real experiences from popular restaurant owners and managers in Bangladesh who scaled their operations.
+                  Real experiences from restaurant owners who scaled their operations.
                 </p>
               </div>
 
