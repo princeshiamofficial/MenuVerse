@@ -310,207 +310,252 @@ export default function Home() {
       <main className="flex-1 w-full pb-0 relative z-10">
 
         {/* Luxury Hero Card - Full Width (40% Shorter Height on Mobile) */}
-        <div className="relative w-full h-[280px] md:h-[600px] overflow-hidden bg-zinc-200 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
-          {/* Hero Background Image - premium_living_room.png */}
-          <Image
-            src="/premium_living_room.png"
-            alt="Premium Living Room Showcase"
-            fill
-            className="object-cover object-center"
-            priority
-          />
-        </div>
+        {false && (
+          <div className="relative w-full h-[280px] md:h-[600px] overflow-hidden bg-zinc-200 shadow-[0_20px_50px_rgba(0,0,0,0.04)]">
+            {/* Hero Background Image - premium_living_room.png */}
+            <Image
+              src="/premium_living_room.png"
+              alt="Premium Living Room Showcase"
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </div>
+        )}
 
         {/* Breathtaking Curated Storefront Grid - Overlapping the Hero Section */}
-        <div className="max-w-7xl mx-auto px-4 md:px-6 -mt-24 md:-mt-80 relative z-20 bg-white rounded-[32px] p-3 md:p-5 border border-neutral-100 shadow-[0_25px_60px_rgba(0,0,0,0.03)] flex flex-col gap-3 md:gap-5">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 mt-24 md:mt-28 pb-12 relative z-20 bg-white rounded-[32px] p-3 md:p-5 border border-neutral-100 shadow-[0_25px_60px_rgba(0,0,0,0.03)] flex flex-col gap-3 md:gap-5">
 
           {/* Store Sub-header with Search Bar */}
-          <div className="flex flex-col items-center md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-neutral-100">
-            <div className="flex items-center justify-between md:justify-start gap-4 w-full md:w-auto order-2 md:order-1">
-              <h2 className="text-2xl md:text-[32px] font-medium tracking-tight text-neutral-950 font-sans truncate">
-                Popular Restaurants
-              </h2>
-            </div>
-
-            {/* Elegant Search Container */}
-            <form onSubmit={handleSearchSubmit} className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto order-1 md:order-2">
-              <div className="relative flex items-center bg-neutral-50 border border-neutral-200/80 rounded-xl px-5 py-2.5 w-full md:w-[320px] transition-all duration-300 focus-within:border-neutral-400 focus-within:bg-white shadow-sm h-[42px]">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 text-neutral-400 mr-2.5 flex-shrink-0"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search on Stuffsus"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-transparent border-none outline-none text-sm w-full text-neutral-800 placeholder-neutral-400 font-medium"
-                />
+          {false && (
+            <div className="flex flex-col items-center md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-neutral-100">
+              <div className="flex items-center justify-between md:justify-start gap-4 w-full md:w-auto order-2 md:order-1">
+                <h2 className="text-2xl md:text-[32px] font-medium tracking-tight text-neutral-950 font-sans truncate">
+                  Popular Restaurants
+                </h2>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsScanning(true)}
-                className="bg-deep-emerald-950 hover:bg-deep-emerald-850 text-white rounded-xl w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm flex-shrink-0"
-                title="Scan QR Code"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-6 h-6 text-white"
+
+              {/* Elegant Search Container */}
+              <form onSubmit={handleSearchSubmit} className="flex items-center justify-center md:justify-start gap-3 w-full md:w-auto order-1 md:order-2">
+                <div className="relative flex items-center bg-neutral-50 border border-neutral-200/80 rounded-xl px-5 py-2.5 w-full md:w-[320px] transition-all duration-300 focus-within:border-neutral-400 focus-within:bg-white shadow-sm h-[42px]">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4 text-neutral-400 mr-2.5 flex-shrink-0"
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search on Stuffsus"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none outline-none text-sm w-full text-neutral-800 placeholder-neutral-400 font-medium"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsScanning(true)}
+                  className="bg-deep-emerald-950 hover:bg-deep-emerald-850 text-white rounded-xl w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm flex-shrink-0"
+                  title="Scan QR Code"
                 >
-                  {/* Outer brackets */}
-                  <path d="M3 8V5a2 2 0 0 1 2-2h3" />
-                  <path d="M16 3h3a2 2 0 0 1 2 2v3" />
-                  <path d="M3 16v3a2 2 0 0 0 2 2h3" />
-                  <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-6 h-6 text-white"
+                  >
+                    {/* Outer brackets */}
+                    <path d="M3 8V5a2 2 0 0 1 2-2h3" />
+                    <path d="M16 3h3a2 2 0 0 1 2 2v3" />
+                    <path d="M3 16v3a2 2 0 0 0 2 2h3" />
+                    <path d="M16 21h3a2 2 0 0 0 2-2v-3" />
 
-                  {/* Finder Patterns Outer Borders */}
-                  {/* Top Left */}
-                  <rect x="5.5" y="5.5" width="5.5" height="5.5" rx="1.2" strokeWidth="1.8" />
-                  {/* Top Right */}
-                  <rect x="13" y="5.5" width="5.5" height="5.5" rx="1.2" strokeWidth="1.8" />
-                  {/* Bottom Left */}
-                  <rect x="5.5" y="13" width="5.5" height="5.5" rx="1.2" strokeWidth="1.8" />
+                    {/* Finder Patterns Outer Borders */}
+                    {/* Top Left */}
+                    <rect x="5.5" y="5.5" width="5.5" height="5.5" rx="1.2" strokeWidth="1.8" />
+                    {/* Top Right */}
+                    <rect x="13" y="5.5" width="5.5" height="5.5" rx="1.2" strokeWidth="1.8" />
+                    {/* Bottom Left */}
+                    <rect x="5.5" y="13" width="5.5" height="5.5" rx="1.2" strokeWidth="1.8" />
 
-                  {/* Inner Solid Components & Data Grid */}
-                  <g fill="currentColor" stroke="none">
-                    {/* Finder Top Left Inner */}
-                    <rect x="7.25" y="7.25" width="2" height="2" rx="0.5" />
-                    {/* Finder Top Right Inner */}
-                    <rect x="14.75" y="7.25" width="2" height="2" rx="0.5" />
-                    {/* Finder Bottom Left Inner */}
-                    <rect x="7.25" y="14.75" width="2" height="2" rx="0.5" />
+                    {/* Inner Solid Components & Data Grid */}
+                    <g fill="currentColor" stroke="none">
+                      {/* Finder Top Left Inner */}
+                      <rect x="7.25" y="7.25" width="2" height="2" rx="0.5" />
+                      {/* Finder Top Right Inner */}
+                      <rect x="14.75" y="7.25" width="2" height="2" rx="0.5" />
+                      {/* Finder Bottom Left Inner */}
+                      <rect x="7.25" y="14.75" width="2" height="2" rx="0.5" />
 
-                    {/* Bottom Right Pixel Matrix */}
-                    <rect x="13" y="13" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="13" y="15" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="13" y="17.5" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="14.5" y="14.25" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="14.5" y="16.25" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="16" y="13" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="16" y="15.25" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="17.5" y="14" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="17.5" y="16" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="16" y="17.5" width="1.2" height="1.2" rx="0.3" />
-                    <rect x="17.5" y="17.5" width="1.2" height="1.2" rx="0.3" />
-                  </g>
-                </svg>
-              </button>
-            </form>
-          </div>
+                      {/* Bottom Right Pixel Matrix */}
+                      <rect x="13" y="13" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="13" y="15" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="13" y="17.5" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="14.5" y="14.25" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="14.5" y="16.25" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="16" y="13" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="16" y="15.25" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="17.5" y="14" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="17.5" y="16" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="16" y="17.5" width="1.2" height="1.2" rx="0.3" />
+                      <rect x="17.5" y="17.5" width="1.2" height="1.2" rx="0.3" />
+                    </g>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* Popular Restaurants Grid */}
-          <div className="w-full">
-            {filteredRestaurants.length === 0 ? (
-              <div className="text-center py-20 bg-neutral-50 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center gap-4">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-12 h-12 text-neutral-300"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-                <span className="text-neutral-400 text-sm font-semibold">
-                  No restaurants found matching your search.
-                </span>
-              </div>
-            ) : (
-              <div
-                ref={restaurantScrollRef}
-                onScroll={handleRestaurantScroll}
-                className="flex gap-1.5 md:gap-3 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-2 w-full"
-              >
-                {[...filteredRestaurants, ...filteredRestaurants, ...filteredRestaurants].map((restaurant, idx) => (
-                  <Link
-                    key={`${restaurant.id}-${idx}`}
-                    href={`/${restaurant.username}`}
-                    className="flex-shrink-0 w-[calc((100%-6px)/1.5)] sm:w-[calc((100%-12px)/2.2)] md:w-[calc((100%-24px)/2.7)] snap-start flex flex-col bg-white rounded-xl border border-neutral-100/80 shadow-[0_12px_36px_rgba(0,0,0,0.03)] overflow-hidden transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.07)] hover:-translate-y-1 group cursor-pointer"
+          {false && (
+            <div className="w-full">
+              {filteredRestaurants.length === 0 ? (
+                <div className="text-center py-20 bg-neutral-50 rounded-2xl border border-neutral-100 flex flex-col items-center justify-center gap-4">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-12 h-12 text-neutral-300"
                   >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <span className="text-neutral-400 text-sm font-semibold">
+                    No restaurants found matching your search.
+                  </span>
+                </div>
+              ) : (
+                <div
+                  ref={restaurantScrollRef}
+                  onScroll={handleRestaurantScroll}
+                  className="flex gap-1.5 md:gap-3 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-2 w-full"
+                >
+                  {[...filteredRestaurants, ...filteredRestaurants, ...filteredRestaurants].map((restaurant, idx) => (
+                    <Link
+                      key={`${restaurant.id}-${idx}`}
+                      href={`/${restaurant.username}`}
+                      className="flex-shrink-0 w-[calc((100%-6px)/1.5)] sm:w-[calc((100%-12px)/2.2)] md:w-[calc((100%-24px)/2.7)] snap-start flex flex-col bg-white rounded-xl border border-neutral-100/80 shadow-[0_12px_36px_rgba(0,0,0,0.03)] overflow-hidden transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.07)] hover:-translate-y-1 group cursor-pointer"
+                    >
 
-                    {/* Restaurant Image Box with overlay badges */}
-                    <div className="relative w-full aspect-[2.8/1] bg-neutral-100">
-                      <div className="absolute inset-0 rounded-t-xl overflow-hidden">
-                        <div className="relative w-full h-full transition-transform duration-700 group-hover:scale-105">
-                          <Image
-                            src={restaurant.image}
-                            alt={restaurant.name}
-                            fill
-                            className="object-cover object-center"
-                            sizes="(max-width: 640px) 67vw, (max-width: 768px) 45vw, 37vw"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
-                        </div>
-                      </div>
-
-                    </div>
-
-                    {/* Restaurant Info Section (Aligned exactly to screenshot) */}
-                    <div className="flex items-center gap-3 p-3 bg-white border-t border-neutral-50/50">
-                      {/* Left: Circular Logo Avatar */}
-                      <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 flex-shrink-0">
-                        <Image
-                          src={restaurant.logoImage}
-                          alt={`${restaurant.name} logo`}
-                          fill
-                          className="object-cover"
-                          sizes="44px"
-                        />
-                      </div>
-
-                      {/* Right: Details Column */}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        {/* Top Line: Location & Rating */}
-                        <div className="flex items-center justify-between gap-2 w-full text-neutral-400 font-semibold text-[10px] sm:text-[11px] leading-none">
-                          {/* Location */}
-                          <div className="flex items-center gap-0.5 min-w-0">
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="w-3.5 h-3.5 text-neutral-400/90 flex-shrink-0"
-                            >
-                              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-                              <circle cx="12" cy="10" r="3" />
-                            </svg>
-                            <span className="truncate text-neutral-450">{restaurant.location}</span>
+                      {/* Restaurant Image Box with overlay badges */}
+                      <div className="relative w-full aspect-[2.8/1] bg-neutral-100">
+                        <div className="absolute inset-0 rounded-t-xl overflow-hidden">
+                          <div className="relative w-full h-full transition-transform duration-700 group-hover:scale-105">
+                            <Image
+                              src={restaurant.image}
+                              alt={restaurant.name}
+                              fill
+                              className="object-cover object-center"
+                              sizes="(max-width: 640px) 67vw, (max-width: 768px) 45vw, 37vw"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
                           </div>
+                        </div>
 
-                          {/* Rating stars & number */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <div className="flex items-center gap-0.5">
-                              {Array.from({ length: 5 }).map((_, starIdx) => {
-                                const ratingValue = parseFloat(restaurant.rating);
-                                const starValue = starIdx + 1;
-                                const isFull = ratingValue >= starValue;
-                                const isHalf = !isFull && ratingValue >= starValue - 0.5;
+                      </div>
 
-                                if (isFull) {
+                      {/* Restaurant Info Section (Aligned exactly to screenshot) */}
+                      <div className="flex items-center gap-3 p-3 bg-white border-t border-neutral-50/50">
+                        {/* Left: Circular Logo Avatar */}
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 flex-shrink-0">
+                          <Image
+                            src={restaurant.logoImage}
+                            alt={`${restaurant.name} logo`}
+                            fill
+                            className="object-cover"
+                            sizes="44px"
+                          />
+                        </div>
+
+                        {/* Right: Details Column */}
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          {/* Top Line: Location & Rating */}
+                          <div className="flex items-center justify-between gap-2 w-full text-neutral-400 font-semibold text-[10px] sm:text-[11px] leading-none">
+                            {/* Location */}
+                            <div className="flex items-center gap-0.5 min-w-0">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="w-3.5 h-3.5 text-neutral-400/90 flex-shrink-0"
+                              >
+                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                                <circle cx="12" cy="10" r="3" />
+                              </svg>
+                              <span className="truncate text-neutral-450">{restaurant.location}</span>
+                            </div>
+
+                            {/* Rating stars & number */}
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <div className="flex items-center gap-0.5">
+                                {Array.from({ length: 5 }).map((_, starIdx) => {
+                                  const ratingValue = parseFloat(restaurant.rating);
+                                  const starValue = starIdx + 1;
+                                  const isFull = ratingValue >= starValue;
+                                  const isHalf = !isFull && ratingValue >= starValue - 0.5;
+
+                                  if (isFull) {
+                                    return (
+                                      <svg
+                                        key={starIdx}
+                                        viewBox="0 0 24 24"
+                                        className="w-3 h-3 text-amber-500 fill-amber-500"
+                                        stroke="currentColor"
+                                        strokeWidth="2.4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                      </svg>
+                                    );
+                                  }
+
+                                  if (isHalf) {
+                                    return (
+                                      <svg
+                                        key={starIdx}
+                                        viewBox="0 0 24 24"
+                                        className="w-3 h-3 text-amber-500"
+                                        stroke="currentColor"
+                                        strokeWidth="2.4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      >
+                                        <defs>
+                                          <linearGradient id={`half-star-pop-${restaurant.id}-${starIdx}`}>
+                                            <stop offset="50%" stopColor="#f59e0b" />
+                                            <stop offset="50%" stopColor="transparent" />
+                                          </linearGradient>
+                                        </defs>
+                                        <polygon
+                                          points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                                          fill={`url(#half-star-pop-${restaurant.id}-${starIdx})`}
+                                        />
+                                      </svg>
+                                    );
+                                  }
+
                                   return (
                                     <svg
                                       key={starIdx}
                                       viewBox="0 0 24 24"
-                                      className="w-3 h-3 text-amber-500 fill-amber-500"
+                                      className="w-3 h-3 text-neutral-300 fill-none"
                                       stroke="currentColor"
                                       strokeWidth="2.4"
                                       strokeLinecap="round"
@@ -519,72 +564,34 @@ export default function Home() {
                                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                                     </svg>
                                   );
-                                }
-
-                                if (isHalf) {
-                                  return (
-                                    <svg
-                                      key={starIdx}
-                                      viewBox="0 0 24 24"
-                                      className="w-3 h-3 text-amber-500"
-                                      stroke="currentColor"
-                                      strokeWidth="2.4"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    >
-                                      <defs>
-                                        <linearGradient id={`half-star-pop-${restaurant.id}-${starIdx}`}>
-                                          <stop offset="50%" stopColor="#f59e0b" />
-                                          <stop offset="50%" stopColor="transparent" />
-                                        </linearGradient>
-                                      </defs>
-                                      <polygon
-                                        points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                                        fill={`url(#half-star-pop-${restaurant.id}-${starIdx})`}
-                                      />
-                                    </svg>
-                                  );
-                                }
-
-                                return (
-                                  <svg
-                                    key={starIdx}
-                                    viewBox="0 0 24 24"
-                                    className="w-3 h-3 text-neutral-300 fill-none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.4"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                                  </svg>
-                                );
-                              })}
+                                })}
+                              </div>
+                              <span className="text-amber-500 font-bold text-[10px] sm:text-[11.5px] leading-none">
+                                ({restaurant.rating})
+                              </span>
                             </div>
-                            <span className="text-amber-500 font-bold text-[10px] sm:text-[11.5px] leading-none">
-                              ({restaurant.rating})
-                            </span>
                           </div>
+
+                          {/* Middle Line: Restaurant Name */}
+                          <h4 className="text-[13.5px] sm:text-[14px] font-black text-neutral-900 tracking-tight leading-tight mt-1 truncate group-hover:text-neutral-700 transition-colors duration-200">
+                            {restaurant.name}
+                          </h4>
+
+                          {/* Bottom Line: Cuisine (Category) */}
+                          <span className="text-[10px] sm:text-[11px] font-bold text-neutral-400/95 leading-tight mt-0.5 truncate">
+                            {restaurant.cuisine}
+                          </span>
                         </div>
-
-                        {/* Middle Line: Restaurant Name */}
-                        <h4 className="text-[13.5px] sm:text-[14px] font-black text-neutral-900 tracking-tight leading-tight mt-1 truncate group-hover:text-neutral-700 transition-colors duration-200">
-                          {restaurant.name}
-                        </h4>
-
-                        {/* Bottom Line: Cuisine (Category) */}
-                        <span className="text-[10px] sm:text-[11px] font-bold text-neutral-400/95 leading-tight mt-0.5 truncate">
-                          {restaurant.cuisine}
-                        </span>
                       </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* All Restaurants section */}
-          <div className="flex flex-col gap-3 sm:gap-4 pt-3 sm:pt-5 mt-1.5 sm:mt-3 border-t border-neutral-100/80 w-full">
+          <div className="flex flex-col gap-3 sm:gap-4 w-full">
 
             {/* Restaurants Header Row */}
             <div className="flex items-center gap-3 sm:gap-4">

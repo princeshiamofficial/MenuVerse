@@ -91,32 +91,7 @@ export default function Header() {
             </svg>
           </button>
 
-          {/* Cart Circle Button with Red Badge */}
-          <button
-            className="relative flex items-center justify-center w-11 h-11 rounded-full bg-deep-emerald-900 border border-deep-emerald-850 hover:bg-deep-emerald-800 hover:scale-[1.03] transition-all duration-200 group focus:outline-none shadow-[0_2px_8px_rgba(0,0,0,0.02)]"
-            aria-label="Shopping Cart"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-[17px] h-[17px] text-white group-hover:scale-[1.03] transition-transform"
-            >
-              <circle cx="9" cy="21" r="1" />
-              <circle cx="20" cy="21" r="1" />
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-            </svg>
 
-            {/* Red Notification Badge - Recreated perfectly */}
-            {cartCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#f43f5e] text-[10px] font-bold text-white shadow-sm ring-2 ring-deep-emerald-950 animate-in zoom-in duration-300">
-                {cartCount}
-              </span>
-            )}
-          </button>
 
           {/* User Profile Sunglasses Avatar - Identical to Mockup */}
           <button

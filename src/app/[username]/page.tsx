@@ -24,7 +24,8 @@ import {
   ChevronDown,
   ChevronUp,
   Utensils,
-  ClipboardList
+  ClipboardList,
+  MoreVertical
 } from "lucide-react";
 
 interface PageProps {
@@ -157,6 +158,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
   const [actionToast, setActionToast] = useState<string | null>(null);
   const [orders, setOrders] = useState<Array<{ id: string; items: any[]; time: string; status: string; total: number }>>([]);
   const [isCategoriesSticky, setIsCategoriesSticky] = useState(false);
+  const [isMenuDropdownOpen, setIsMenuDropdownOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -348,10 +350,10 @@ export default function RestaurantMenuPage({ params }: PageProps) {
             </div>
 
             {/* White info area overlapping cover photo */}
-            <div className="bg-white rounded-t-2xl sm:rounded-t-3xl -mt-10 sm:-mt-16 md:-mt-20 pt-3 relative z-10 shadow-md">
+            <div className="bg-white rounded-t-2xl sm:rounded-t-3xl -mt-10 sm:-mt-16 md:-mt-20 pt-3 relative z-35 shadow-md">
 
               {/* Profile Details Row */}
-              <div className="px-3 sm:px-8 pb-3 flex items-center gap-5">
+              <div className="px-3 sm:px-8 pb-3 flex items-center justify-between gap-5">
 
                 {/* Left Side: Avatar Profile Image & Text Info */}
                 <div className="flex flex-row items-end sm:items-center gap-2 sm:gap-5 text-left">
@@ -367,7 +369,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                   </div>
 
                   {/* Brand details */}
-                  <div className="flex flex-col pb-1 min-w-0 relative -top-1.5 sm:-top-5 gap-1 text-left ml-1 sm:ml-0">
+                  <div className="flex flex-col pb-1 min-w-0 relative -top-1.5 sm:top-0 gap-1 text-left ml-1 sm:ml-0">
                     <h1 className="text-lg sm:text-[22px] font-black text-neutral-900 tracking-tight leading-none truncate">
                       {restaurant.name}
                     </h1>
@@ -378,10 +380,62 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                   </div>
                 </div>
 
+                {/* Mobile More Options Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsMenuDropdownOpen(!isMenuDropdownOpen)}
+                    className="md:hidden p-2 text-neutral-500 hover:text-neutral-700 active:scale-95 transition-all cursor-pointer rounded-full hover:bg-neutral-50 -mt-8 -mr-3"
+                    title="More options"
+                  >
+                    <MoreVertical className="w-5.5 h-5.5" />
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isMenuDropdownOpen && (
+                    <>
+                      {/* Backdrop for closing */}
+                      <div 
+                        className="fixed inset-0 z-40 bg-transparent" 
+                        onClick={() => setIsMenuDropdownOpen(false)}
+                      />
+                      <div className="absolute right-0 mt-1 w-40 bg-white border border-neutral-200/80 rounded-2xl shadow-xl z-50 py-1.5 animate-in fade-in slide-in-from-top-2 duration-155">
+                        <button
+                          onClick={() => {
+                            setIsMenuDropdownOpen(false);
+                            handleShareProfile(); // Copies link & triggers toast
+                          }}
+                          className="w-full px-4 py-2.5 text-xs font-bold text-neutral-750 hover:bg-neutral-50 flex items-center gap-2.5 cursor-pointer text-left"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                          <span>Copy Link</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsMenuDropdownOpen(false);
+                            if (navigator.share) {
+                              navigator.share({
+                                title: restaurant.name,
+                                text: `Check out the digital food menu for ${restaurant.name}!`,
+                                url: window.location.href,
+                              }).catch(() => {});
+                            } else {
+                              handleShareProfile();
+                            }
+                          }}
+                          className="w-full px-4 py-2.5 text-xs font-bold text-neutral-755 hover:bg-neutral-50 flex items-center gap-2.5 cursor-pointer text-left border-t border-neutral-100/80"
+                        >
+                          <Share2 className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>Share Menu</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
               </div>
 
               {/* Desktop Tabs */}
-              <div className="hidden md:flex justify-between items-center border-t border-neutral-100/80 px-8">
+              <div className="hidden md:flex justify-between items-center border-t border-neutral-100/80 pl-8 pr-0">
                 <div className="flex gap-2 -mb-[1px]">
                   <button
                     onClick={() => {
@@ -552,14 +606,13 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                   )}
                 </div>
 
-                {/* Category Selector Pills */}
                 <div className={`flex flex-col gap-1.5 sticky top-0 md:relative md:top-auto z-30 bg-[#f0f2f5] transition-all duration-150 ${
                   isCategoriesSticky 
-                    ? "pt-4 pb-2 -mx-4 px-4 border-b border-neutral-200/50 shadow-sm mt-0" 
-                    : "pt-1.5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 -mt-3 md:mt-0"
+                    ? "pt-4 pb-2 -mx-4 px-0 border-b border-neutral-200/50 shadow-sm mt-0 md:mx-0 md:px-0" 
+                    : "pt-1.5 pb-2 -mx-4 px-0 md:mx-0 md:px-0 -mt-3 md:mt-0"
                 }`}>
                   {isCategoriesSticky && (
-                    <div className="flex items-center justify-between px-0.5 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex items-center justify-between px-4 pb-1 animate-in fade-in slide-in-from-top-1 duration-200">
                       <span className="text-xs font-black text-neutral-900 tracking-tight leading-none uppercase">
                         {restaurant.name}
                       </span>
@@ -569,7 +622,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                     </div>
                   )}
 
-                  <div className="flex gap-2 overflow-x-auto scrollbar-none w-full scroll-smooth">
+                  <div className="flex gap-2 overflow-x-auto scrollbar-none w-full scroll-smooth px-4 md:px-0">
                     {categories.map((cat) => {
                       const isActive = selectedCategory.toLowerCase() === cat.toLowerCase();
                       return (
