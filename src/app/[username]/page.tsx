@@ -585,7 +585,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
               <div className="flex flex-col gap-4 w-full">
 
                 {/* Mobile Search Bar */}
-                <div className="block md:hidden w-[65%] max-w-[240px] ml-auto -mr-4 relative z-20 mt-0">
+                <div className="block md:hidden w-[65%] max-w-[240px] ml-auto -mr-4 relative z-36 -mt-1.5">
                   <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Search className="h-4 w-4 text-neutral-400" />
                   </span>
@@ -594,7 +594,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                     placeholder="Search menu..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="block w-full pl-9 pr-8 py-2.5 text-xs font-semibold bg-white border border-neutral-200/80 rounded-l-full rounded-r-none focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all placeholder-neutral-400 shadow-sm"
+                    className="block w-full pl-9 pr-8 py-2.5 text-xs font-semibold bg-white border border-neutral-200/80 rounded-tl-none rounded-bl-[14px] rounded-r-none focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white transition-all placeholder-neutral-400 shadow-sm"
                   />
                   {searchQuery && (
                     <button
