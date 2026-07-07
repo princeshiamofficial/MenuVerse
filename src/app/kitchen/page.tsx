@@ -3,36 +3,32 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import { RESTAURANTS } from "../data/restaurants";
+import { RESTAURANTS, Branch } from "../data/restaurants";
 import {
   Menu,
   Bell,
-  Clock,
   Check,
-  ChevronRight,
   ChefHat,
-  ReceiptText,
-  ClipboardCheck,
-  CheckCircle2,
-  BadgeCheck,
-  UserCheck,
-  X,
-  Volume2,
-  VolumeX,
-  LayoutGrid,
-  Kanban
+  X
 } from "lucide-react";
 import KitchenOrderCard, {
   KitchenOrder,
-  calculateProgressInfo,
   getStationForItem
 } from "../../../ui/KitchenOrderCard";
+
+interface StoredLiveOrder {
+  id: string;
+  table: string;
+  items: Array<{ name: string; quantity: number }>;
+  status: KitchenOrder["status"];
+  branchId: string;
+}
 
 // Synth Audio sound alert utilities
 const playChime = () => {
   if (typeof window === "undefined") return;
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
 
@@ -64,7 +60,7 @@ const playChime = () => {
 const playOverdueWarning = () => {
   if (typeof window === "undefined") return;
   try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
 
@@ -99,9 +95,6 @@ export default function KitchenPage() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Track which column is being dragged over
-  const [dragOverColumn, setDragOverColumn] = useState<KitchenOrder["status"] | null>(null);
-
   // Pop-up modal details state
   const [selectedOrder, setSelectedOrder] = useState<KitchenOrder | null>(null);
   const [modalState, setModalState] = useState<"closed" | "open" | "closing">("closed");
@@ -109,13 +102,11 @@ export default function KitchenPage() {
   // Dynamic user roles and branch states
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
-  const [userAssignedBranchId, setUserAssignedBranchId] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
-  const [allBranches, setAllBranches] = useState<any[]>([]);
+  const [allBranches, setAllBranches] = useState<Branch[]>([]);
 
   // Sliding tabs layout and audio states
   const selectedStation = "All";
-  const layoutMode = "grid";
   const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
   const [openDropdownOrderId, setOpenDropdownOrderId] = useState<string | null>(null);
 
@@ -152,7 +143,6 @@ export default function KitchenPage() {
 
       setUserRole(role);
       setUserDisplayName(name);
-      setUserAssignedBranchId(branchId);
 
       if (role === "manager" && branchId) {
         setSelectedBranchId(branchId);
@@ -174,7 +164,7 @@ export default function KitchenPage() {
       } else {
         setAllBranches(defaults);
       }
-    } catch (e) {
+    } catch {
       setAllBranches(defaults);
     }
   }, []);
@@ -292,17 +282,17 @@ export default function KitchenPage() {
     try {
       const storedOrdersStr = localStorage.getItem("live_orders");
       if (storedOrdersStr) {
-        const liveOrders = JSON.parse(storedOrdersStr);
+        const liveOrders = JSON.parse(storedOrdersStr) as StoredLiveOrder[];
         setOrders(prev => {
           const filteredLive = liveOrders
-            .filter((l: any) => !prev.some(p => p.id === l.id))
-            .map((l: any) => ({
+            .filter((l: StoredLiveOrder) => !prev.some(p => p.id === l.id))
+            .map((l: StoredLiveOrder) => ({
               id: l.id,
               table: l.table,
-              items: l.items.map((i: any) => ({ name: i.name, quantity: i.quantity, checked: false })),
+              items: l.items.map((i: { name: string; quantity: number }) => ({ name: i.name, quantity: i.quantity, checked: false })),
               elapsedMinutes: 1,
               priority: "medium" as const,
-              status: l.status as any,
+              status: l.status,
               branchId: l.branchId
             }));
           return [...filteredLive, ...prev];
@@ -359,33 +349,7 @@ export default function KitchenPage() {
     setOrders(prev => prev.filter(o => o.id !== orderId));
   };
 
-  // Drag and Drop Handlers
-  const handleDragStart = (e: React.DragEvent, orderId: string) => {
-    e.dataTransfer.setData("text/plain", orderId);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDragEnter = (e: React.DragEvent, status: KitchenOrder["status"]) => {
-    e.preventDefault();
-    setDragOverColumn(status);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverColumn(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, targetStatus: KitchenOrder["status"]) => {
-    e.preventDefault();
-    setDragOverColumn(null);
-    const orderId = e.dataTransfer.getData("text/plain");
-    if (orderId) {
-      moveOrder(orderId, targetStatus);
-    }
-  };
+  // Drag and Drop Handlers are currently unused in grid layout
 
   // Filter orders by branch and prep station
   const filteredOrders = orders
@@ -488,9 +452,9 @@ export default function KitchenPage() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-slate-200" />
+            <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-600">{userDisplayName}</span>
@@ -599,7 +563,7 @@ export default function KitchenPage() {
                           : "border-slate-300 hover:border-slate-400 bg-white"
                           }`}
                       >
-                        {item.checked && <Check className="w-3 h-3 stroke-[3]" />}
+                        {item.checked && <Check className="w-3 h-3 stroke-3" />}
                       </div>
                       <div className="flex-1 min-w-0 flex items-center justify-between">
                         <p className={`text-xs font-bold leading-tight ${item.checked ? "line-through text-slate-400" : ""}`}>

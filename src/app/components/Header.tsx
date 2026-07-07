@@ -7,7 +7,6 @@ import Link from "next/link";
 
 export default function Header() {
   const pathname = usePathname();
-  const [cartCount, setCartCount] = useState(12);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 

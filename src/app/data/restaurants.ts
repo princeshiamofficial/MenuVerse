@@ -33,6 +33,17 @@ export interface Restaurant {
   username: string;
   menuItems: MenuItem[];
   branches?: Branch[];
+  phone?: string;
+  operatingHours?: string;
+  facilities?: string;
+  introText?: string;
+  descriptionText?: string;
+  offerSlides?: string[];
+  offer_slides?: string | string[];
+  primaryColor?: string;
+  primary_color?: string;
+  layoutType?: string;
+  layout_type?: string;
 }
 
 export const RESTAURANTS: Restaurant[] = [
@@ -43,6 +54,9 @@ export const RESTAURANTS: Restaurant[] = [
     rating: "4.9",
     reviews: "340",
     price: "$$",
+    phone: "+8801919-760626",
+    operatingHours: "Open Daily: 11:00 AM - 11:30 PM",
+    facilities: "Air Conditioned, Wifi, Table QR ordering, bKash payments accepted",
     time: "15-25 min",
     location: "Dhanmondi, Dhaka",
     logo: "B",

@@ -11,10 +11,14 @@ import {
   ClipboardList,
   Tags,
   Store,
-  QrCode
+  QrCode,
+  MapPin,
+  Users,
+  Palette
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
 interface SidebarProps {
   activeTab: string;
@@ -30,7 +34,6 @@ interface SidebarProps {
 export default function Sidebar({
   activeTab,
   setActiveTab,
-  ordersCount,
   handleLogout,
   isMobile = false,
   onCloseMobile,
@@ -38,6 +41,7 @@ export default function Sidebar({
   isCollapsed = false,
 }: SidebarProps) {
   
+  const pathname = usePathname();
   const [userRole, setUserRole] = useState("admin");
 
   useEffect(() => {
@@ -47,40 +51,47 @@ export default function Sidebar({
     }
   }, []);
 
+  interface SidebarMenuItem {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    href?: string;
+  }
+
   // Sidebar navigation items for the Digital Food Menu application
-  const menuItems = [
+  const menuItems: SidebarMenuItem[] = [
     { id: "dashboard", label: "Dashboard", icon: LayoutGrid },
     { id: "pos", label: "POS", icon: Monitor },
     { id: "orders", label: "Orders", icon: Package },
     { id: "kitchen", label: "Kitchen", icon: ChefHat },
     { id: "inventory", label: "Inventory", icon: ClipboardList },
-    { id: "menu-availability", label: "Menu", icon: Utensils },
+    { id: "menu", label: "Menu", icon: Utensils },
     { id: "categories", label: "Categories", icon: Tags },
-    ...(userRole === "admin" ? [{ id: "branches", label: "Manage Branch", icon: Store, href: "/branches" }] : []),
+    ...(userRole === "admin" ? [{ id: "branches", label: "Manage Branch", icon: MapPin, href: "/branches" }] : []),
+    ...(userRole === "admin" ? [{ id: "profile", label: "Profile", icon: Store, href: "/profile" }] : []),
+    ...(userRole === "admin" ? [{ id: "appearance", label: "Appearance", icon: Palette, href: "/appearance" }] : []),
+    ...(userRole === "admin" ? [{ id: "staff", label: "Manage Staff", icon: Users, href: "/staff" }] : []),
     ...(userRole !== "admin" ? [{ id: "qr-codes", label: "Table QR Codes", icon: QrCode, href: "/qr-codes" }] : []),
     ...(userRole === "admin" ? [{ id: "settings", label: "Settings", icon: Settings }] : []),
   ];
 
   // Map our dashboard page states to show the correct selected state
   const isSelected = (itemId: string) => {
-    if (typeof window !== "undefined") {
-      const pathname = window.location.pathname;
-
-      if (itemId === "branches") {
-        return pathname.includes("/branches");
+    if (!pathname) {
+      if (itemId === "orders") {
+        return activeTab === "all-orders" || activeTab === "active" || activeTab === "completed" || activeTab === "orders";
       }
-      if (itemId === "qr-codes") {
-        return pathname.includes("/qr-codes");
-      }
-      if (itemId === "settings") {
-        return pathname.includes("/settings");
-      }
+      return activeTab === itemId;
     }
 
+    if (itemId === "dashboard") {
+      return pathname === "/dashboard" || pathname === "/";
+    }
     if (itemId === "orders") {
-      return activeTab === "all-orders" || activeTab === "active" || activeTab === "completed" || activeTab === "orders";
+      return pathname.includes("/orders");
     }
-    return activeTab === itemId;
+
+    return pathname === `/${itemId}` || pathname.startsWith(`/${itemId}/`);
   };
 
   const handleItemClick = (itemId: string) => {
@@ -104,6 +115,7 @@ export default function Sidebar({
       {/* Header section (Black background, brand logo and hamburger menu) */}
       <div className={`bg-black py-4 ${isCollapsed ? "px-2 justify-center" : "px-6 justify-between"} flex items-center border-b border-[#1a2b49]/20 shrink-0 h-16`}>
         {!isCollapsed && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img 
             src="/logo.png" 
             alt="Color Hut Logo" 
@@ -140,7 +152,7 @@ export default function Sidebar({
           return (
             <Link
               key={item.id}
-              href={(item as any).href || (item.id === "dashboard" ? "/dashboard" : item.id === "orders" ? "/orders" : `/${item.id}`)}
+              href={item.href || (item.id === "dashboard" ? "/dashboard" : item.id === "orders" ? "/orders" : `/${item.id}`)}
               onClick={() => handleItemClick(item.id)}
               title={isCollapsed ? item.label : undefined}
               className={`w-full flex items-center ${isCollapsed ? "justify-center p-3" : "justify-between px-3.5 py-3"} rounded-[12px] text-[13.5px] font-semibold tracking-wide transition-all duration-150 group focus:outline-none ${
@@ -164,8 +176,18 @@ export default function Sidebar({
       <div className={`border-t border-[#1a2b49]/30 py-4 ${isCollapsed ? "px-2" : "px-3"} shrink-0`}>
         <button
           onClick={() => {
-            localStorage.removeItem("isLoggedIn");
-            handleLogout();
+            fetch("/api/auth/logout", { method: "POST" })
+              .then(() => {
+                localStorage.removeItem("isLoggedIn");
+                localStorage.removeItem("userRole");
+                localStorage.removeItem("userDisplayName");
+                localStorage.removeItem("userAssignedBranchId");
+                handleLogout();
+              })
+              .catch(() => {
+                localStorage.removeItem("isLoggedIn");
+                handleLogout();
+              });
           }}
           title={isCollapsed ? "Logout" : undefined}
           className={`w-full flex items-center ${isCollapsed ? "justify-center p-3" : "gap-3 px-3.5 py-3"} rounded-[12px] text-[13.5px] font-semibold tracking-wide text-slate-300 hover:text-white hover:bg-red-950/15 transition-all duration-150 group focus:outline-none`}

@@ -3,7 +3,17 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import { RESTAURANTS } from "../data/restaurants";
+import { RESTAURANTS, Branch } from "../data/restaurants";
+
+interface Table {
+  name: string;
+  location: string;
+  status: string;
+}
+
+interface CustomBranch extends Branch {
+  isCustom?: boolean;
+}
 import { 
   Menu, 
   Bell, 
@@ -31,12 +41,10 @@ export default function BranchesPage() {
   const [previewQr, setPreviewQr] = useState<{ name: string; location: string; url: string } | null>(null);
 
   // Dynamic user roles and branch states
-  const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
-  const [userAssignedBranchId, setUserAssignedBranchId] = useState("");
 
   // Branch management states
-  const [branches, setBranches] = useState<any[]>([]);
+  const [branches, setBranches] = useState<CustomBranch[]>([]);
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
   const [branchModalMode, setBranchModalMode] = useState<"add" | "edit">("add");
   const [editingBranchId, setEditingBranchId] = useState("");
@@ -44,6 +52,7 @@ export default function BranchesPage() {
   const [branchFormLocation, setBranchFormLocation] = useState("");
   const [branchFormPhone, setBranchFormPhone] = useState("");
   const [branchFormHours, setBranchFormHours] = useState("");
+  const [branchFormTablesCount, setBranchFormTablesCount] = useState(2);
 
   // Table QR Code states (scoped to selected branch card)
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
@@ -63,11 +72,8 @@ export default function BranchesPage() {
       
       const role = localStorage.getItem("userRole") || "admin";
       const name = localStorage.getItem("userDisplayName") || "Color Hut Admin";
-      const branchId = localStorage.getItem("userAssignedBranchId") || "";
       
-      setUserRole(role);
       setUserDisplayName(name);
-      setUserAssignedBranchId(branchId);
 
       // Branch managers cannot access branch settings
       if (role !== "admin") {
@@ -75,19 +81,15 @@ export default function BranchesPage() {
         return;
       }
 
-      // Load branches
-      const restaurant = RESTAURANTS.find(r => r.id === 1);
-      const defaults = restaurant?.branches || [];
-      const storedBranchesStr = localStorage.getItem("restaurant_branches");
-      if (storedBranchesStr) {
-        try {
-          setBranches([...defaults, ...JSON.parse(storedBranchesStr)]);
-        } catch (e) {
-          setBranches(defaults);
-        }
-      } else {
-        setBranches(defaults);
-      }
+      // Load branches from database API
+      fetch("/api/tenant/branches")
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setBranches(data);
+          }
+        })
+        .catch(err => console.error("Error loading branches:", err));
 
       const currentOrigin = window.location.origin;
       requestAnimationFrame(() => {
@@ -106,11 +108,45 @@ export default function BranchesPage() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const saveBranchesToStorage = (updatedBranches: any[]) => {
+  const saveBranchesToStorage = async (updatedBranches: CustomBranch[]) => {
+    // Save locally for immediate UI response
     setBranches(updatedBranches);
-    const defaults = RESTAURANTS.find(r => r.id === 1)?.branches || [];
-    const customs = updatedBranches.filter(b => !defaults.some(d => d.id === b.id) || b.isCustom);
-    localStorage.setItem("restaurant_branches", JSON.stringify(customs));
+    
+    try {
+      // Find deleted branches (in old branches, not in updatedBranches)
+      const deleted = branches.filter(b => !updatedBranches.some(u => u.id === b.id));
+      for (const d of deleted) {
+        await fetch(`/api/tenant/branches?id=${d.id}`, { method: "DELETE" });
+      }
+
+      // Find added or modified branches
+      for (const u of updatedBranches) {
+        const original = branches.find(b => b.id === u.id);
+        const hasChanged = !original || 
+          original.name !== u.name || 
+          original.location !== u.location || 
+          original.phone !== u.phone || 
+          original.operatingHours !== u.operatingHours || 
+          JSON.stringify(original.tables) !== JSON.stringify(u.tables);
+
+        if (hasChanged) {
+          await fetch("/api/tenant/branches", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: u.id,
+              name: u.name,
+              location: u.location,
+              phone: u.phone,
+              operatingHours: u.operatingHours,
+              tables: u.tables
+            })
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to sync branches with MySQL database:", err);
+    }
   };
 
   // Branch CRUD handlers
@@ -120,10 +156,11 @@ export default function BranchesPage() {
     setBranchFormLocation("");
     setBranchFormPhone("");
     setBranchFormHours("11:00 AM - 11:00 PM");
+    setBranchFormTablesCount(2);
     setIsBranchModalOpen(true);
   };
 
-  const handleOpenEditBranchModal = (branch: any) => {
+  const handleOpenEditBranchModal = (branch: CustomBranch) => {
     setBranchModalMode("edit");
     setEditingBranchId(branch.id);
     setBranchFormName(branch.name);
@@ -144,16 +181,19 @@ export default function BranchesPage() {
         alert("A branch with this name already exists.");
         return;
       }
+      const tableCount = Number(branchFormTablesCount);
+      const generatedTables = Array.from({ length: tableCount }, (_, i) => ({
+        name: `Table ${String(i + 1).padStart(2, "0")}`,
+        location: "Main Hall",
+        status: "Active"
+      }));
       const newBranch = {
         id: newId,
         name: branchFormName,
         location: branchFormLocation,
         phone: branchFormPhone,
         operatingHours: branchFormHours,
-        tables: [
-          { name: "Table 01", location: "Main Hall", status: "Active" },
-          { name: "Table 02", location: "Main Hall", status: "Active" }
-        ],
+        tables: generatedTables,
         isCustom: true
       };
       updatedBranches = [...branches, newBranch];
@@ -197,7 +237,7 @@ export default function BranchesPage() {
     setIsQrModalOpen(true);
   };
 
-  const handleOpenEditTableModal = (branchId: string, table: any, index: number) => {
+  const handleOpenEditTableModal = (branchId: string, table: Table, index: number) => {
     setSelectedBranchId(branchId);
     setQrModalMode("edit");
     setEditingTableIndex(index);
@@ -233,7 +273,7 @@ export default function BranchesPage() {
         if (b.id === branchId) {
           return {
             ...b,
-            tables: b.tables.filter((_: any, idx: number) => idx !== index)
+            tables: b.tables.filter((_: Table, idx: number) => idx !== index)
           };
         }
         return b;
@@ -353,9 +393,9 @@ export default function BranchesPage() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-slate-205" />
+            <div className="h-8 w-px bg-slate-205" />
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-600">{userDisplayName}</span>
@@ -444,7 +484,7 @@ export default function BranchesPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
-                      {b.tables.map((table: any, idx: number) => {
+                      {b.tables.map((table: Table, idx: number) => {
                         const tableUrl = `${origin}/burgercraftlab?branch=${b.id}&table=${table.name.replace("Table ", "")}`;
                         const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(tableUrl)}`;
                         
@@ -477,6 +517,7 @@ export default function BranchesPage() {
                             </div>
 
                             <div className="p-1.5 rounded-xl bg-white border border-slate-200 shadow-inner relative flex items-center justify-center select-none w-24 h-24 sm:w-28 sm:h-28 overflow-hidden group-hover:border-[#ff7a00] transition-colors duration-300">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img 
                                 src={qrImageUrl} 
                                 alt={`${table.name} QR`} 
@@ -512,9 +553,9 @@ export default function BranchesPage() {
 
       {/* QR Code Preview Modal */}
       {previewQr && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div 
-            className="bg-white rounded-3xl p-6 max-w-sm w-full flex flex-col gap-5 shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-tr-3xl rounded-bl-3xl rounded-tl-none rounded-br-none p-6 max-w-sm w-full flex flex-col gap-5 shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center pb-2 border-b border-slate-100">
@@ -532,7 +573,8 @@ export default function BranchesPage() {
             </div>
 
             <div className="flex flex-col items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center shadow-inner relative group">
-              <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-md relative flex items-center justify-center select-none">
+              <div className="bg-white p-3 rounded-tr-2xl rounded-bl-2xl rounded-tl-none rounded-br-none border border-slate-200 shadow-md relative flex items-center justify-center select-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(previewQr.url)}`}
                   alt={`${previewQr.name} QR Code`}
@@ -696,6 +738,23 @@ export default function BranchesPage() {
                   required
                 />
               </div>
+
+              {branchModalMode === "add" && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] uppercase font-bold text-slate-500">Initial Tables Count</label>
+                  <select
+                    value={branchFormTablesCount}
+                    onChange={(e) => setBranchFormTablesCount(Number(e.target.value))}
+                    className="text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[#ff7a00] text-slate-800 font-bold bg-slate-50 font-sans cursor-pointer"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20, 25, 30, 40, 50].map((num) => (
+                      <option key={num} value={num}>
+                        {num} {num === 1 ? "Table" : "Tables"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="flex gap-2.5 justify-end mt-2 pt-3 border-t border-slate-100">
                 <button

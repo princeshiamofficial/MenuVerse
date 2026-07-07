@@ -9,7 +9,6 @@ interface ToastProps {
 
 export default function Toast({ 
   text, 
-  subText = "Request processed successfully", 
   type = "success", 
   onClose 
 }: ToastProps) {
@@ -19,7 +18,7 @@ export default function Toast({
     <div className="w-[330px] h-20 rounded-lg p-2.5 px-3.5 bg-white shadow-[rgba(149,157,165,0.2)_0px_8px_24px] relative overflow-hidden flex items-center justify-between gap-3.5 border border-neutral-100/85 text-left">
       {/* Wave Graphic */}
       <svg 
-        className="absolute rotate-90 -left-[31px] top-8 w-20 pointer-events-none" 
+        className="absolute rotate-90 left-[-31px] top-8 w-20 pointer-events-none" 
         viewBox="0 0 1440 320" 
         xmlns="http://www.w3.org/2000/svg"
         style={{
@@ -50,7 +49,7 @@ export default function Toast({
       </div>
 
       {/* Message text container */}
-      <div className="flex flex-col justify-center items-start flex-grow min-w-0 text-left pl-1.5">
+      <div className="flex flex-col justify-center items-start grow min-w-0 text-left pl-1.5">
         <p 
           className="text-[13.5px] font-extrabold m-0 leading-tight truncate w-full"
           style={{

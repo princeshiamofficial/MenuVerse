@@ -356,7 +356,7 @@ export default function KitchenOrderCard({
                 }`}
               >
                 <span>{statusLabels[status]}</span>
-                {order.status === status && <Check className="w-3.5 h-3.5 text-[#ff7a00] stroke-[3]" />}
+                {order.status === status && <Check className="w-3.5 h-3.5 text-[#ff7a00] stroke-3" />}
               </button>
             ))}
           </div>

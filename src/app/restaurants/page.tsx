@@ -11,6 +11,30 @@ export default function RestaurantsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [selectedCuisine, setSelectedCuisine] = useState("All");
+  const [customRestaurant, setCustomRestaurant] = useState<{
+    name?: string;
+    cuisine?: string;
+    location?: string;
+    image?: string;
+    logoImage?: string;
+    rating?: string;
+    reviews?: string;
+    time?: string;
+    price?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("custom_restaurant_details");
+      if (stored) {
+        try {
+          setCustomRestaurant(JSON.parse(stored));
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, []);
 
   // Camera QR scanner simulation states
   const [isScanning, setIsScanning] = useState(false);
@@ -57,15 +81,36 @@ export default function RestaurantsPage() {
     }
   }, [isScanning]);
 
+  // Merge custom restaurant details into the RESTAURANTS list
+  const mergedRestaurants = useMemo(() => {
+    return RESTAURANTS.map((restaurant) => {
+      if (restaurant.id === 1 && customRestaurant) {
+        return {
+          ...restaurant,
+          name: customRestaurant.name || restaurant.name,
+          cuisine: customRestaurant.cuisine || restaurant.cuisine,
+          location: customRestaurant.location || restaurant.location,
+          image: customRestaurant.image || restaurant.image,
+          logoImage: customRestaurant.logoImage || restaurant.logoImage,
+          rating: customRestaurant.rating || restaurant.rating,
+          reviews: customRestaurant.reviews || restaurant.reviews,
+          time: customRestaurant.time || restaurant.time,
+          price: customRestaurant.price || restaurant.price,
+        };
+      }
+      return restaurant;
+    });
+  }, [customRestaurant]);
+
   // Extract unique cuisines for category tabs
   const cuisines = useMemo(() => {
-    const list = new Set(RESTAURANTS.map((r) => r.cuisine.split(" ")[0]));
+    const list = new Set(mergedRestaurants.map((r) => r.cuisine.split(" ")[0]));
     return ["All", ...Array.from(list)];
-  }, []);
+  }, [mergedRestaurants]);
 
   // Filter restaurants based on search query and selected category tab
   const filteredRestaurants = useMemo(() => {
-    return RESTAURANTS.filter((restaurant) => {
+    return mergedRestaurants.filter((restaurant) => {
       const matchesSearch =
         restaurant.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
         restaurant.cuisine.toLowerCase().includes(activeSearch.toLowerCase()) ||
@@ -77,7 +122,7 @@ export default function RestaurantsPage() {
 
       return matchesSearch && matchesCuisine;
     });
-  }, [activeSearch, selectedCuisine]);
+  }, [mergedRestaurants, activeSearch, selectedCuisine]);
 
   return (
     <div className="min-h-screen bg-neutral-50 flex flex-col font-sans antialiased pb-0 select-none">
@@ -97,9 +142,9 @@ export default function RestaurantsPage() {
             </h2>
             
             {/* Elegant Search Input & Standalone QR Button */}
-            <div className="flex items-center gap-3 w-full sm:w-auto flex-shrink-0">
+            <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
               <div className="relative flex items-center bg-white border border-neutral-200/80 rounded-2xl px-5 py-2.5 w-full sm:w-[320px] transition-all duration-300 focus-within:border-neutral-400 shadow-sm h-[46px]">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-[18px] h-[18px] text-neutral-450 mr-3 flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-[18px] h-[18px] text-neutral-450 mr-3 shrink-0">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
@@ -124,7 +169,7 @@ export default function RestaurantsPage() {
               <button
                 type="button"
                 onClick={() => setIsScanning(true)}
-                className="bg-deep-emerald-950 hover:bg-deep-emerald-850 text-white rounded-2xl w-[46px] h-[46px] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm flex-shrink-0 cursor-pointer"
+                className="bg-deep-emerald-950 hover:bg-deep-emerald-850 text-white rounded-2xl w-[46px] h-[46px] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm shrink-0 cursor-pointer"
                 title="Scan Menu QR Code"
               >
                 <svg
@@ -217,7 +262,7 @@ export default function RestaurantsPage() {
                         className="object-cover object-center"
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent opacity-60" />
                     </div>
                   </div>
                 </div>
@@ -225,7 +270,7 @@ export default function RestaurantsPage() {
                 {/* Restaurant Info Section (Aligned exactly to screenshot) */}
                 <div className="flex items-center gap-3 p-3 bg-white border-t border-neutral-50/50">
                   {/* Left: Circular Logo Avatar */}
-                  <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 flex-shrink-0">
+                  <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 shrink-0">
                     <Image
                       src={restaurant.logoImage}
                       alt={`${restaurant.name} logo`}
@@ -249,7 +294,7 @@ export default function RestaurantsPage() {
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className="w-3.5 h-3.5 text-neutral-400/90 flex-shrink-0"
+                          className="w-3.5 h-3.5 text-neutral-400/90 shrink-0"
                         >
                           <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                           <circle cx="12" cy="10" r="3" />
@@ -258,7 +303,7 @@ export default function RestaurantsPage() {
                       </div>
 
                       {/* Rating stars & number */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <div className="flex items-center gap-0.5">
                           {Array.from({ length: 5 }).map((_, starIdx) => {
                             const ratingValue = parseFloat(restaurant.rating);
@@ -351,7 +396,7 @@ export default function RestaurantsPage() {
 
       {/* Simulated Scanner Viewfinder Overlay */}
       {isScanning && (
-        <div className="fixed inset-0 bg-deep-emerald-950/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-deep-emerald-950/70 backdrop-blur-md z-100 flex items-center justify-center p-4">
           <style dangerouslySetInnerHTML={{
             __html: `
             @keyframes scanlaser {

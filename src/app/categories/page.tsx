@@ -14,8 +14,7 @@ import {
   Trash2, 
   X,
   Tags,
-  Check,
-  FolderOpen
+  Check
 } from "lucide-react";
 
 interface Category {
@@ -294,9 +293,9 @@ export default function CategoriesPage() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-slate-205" />
+            <div className="h-8 w-px bg-slate-205" />
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-655">Color Hut Admin</span>

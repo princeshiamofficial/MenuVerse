@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import { RESTAURANTS } from "../data/restaurants";
+import { RESTAURANTS, Branch } from "../data/restaurants";
 import { 
   Menu, 
   Bell, 
@@ -16,6 +16,16 @@ import {
   FileText,
   QrCode
 } from "lucide-react";
+
+interface Table {
+  name: string;
+  location: string;
+  status: string;
+}
+
+interface CustomBranch extends Branch {
+  isCustom?: boolean;
+}
 
 export default function QrCodesPage() {
   const router = useRouter();
@@ -30,10 +40,9 @@ export default function QrCodesPage() {
   // Dynamic user roles and branch states
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
-  const [userAssignedBranchId, setUserAssignedBranchId] = useState("");
 
   // Branch and Table states
-  const [branches, setBranches] = useState<any[]>([]);
+  const [branches, setBranches] = useState<CustomBranch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrModalMode, setQrModalMode] = useState<"add" | "edit">("add");
@@ -59,7 +68,6 @@ export default function QrCodesPage() {
       
       setUserRole(role);
       setUserDisplayName(name);
-      setUserAssignedBranchId(branchId);
 
       if (role === "manager" && branchId) {
         setSelectedBranchId(branchId);
@@ -74,7 +82,7 @@ export default function QrCodesPage() {
       if (storedBranchesStr) {
         try {
           setBranches([...defaults, ...JSON.parse(storedBranchesStr)]);
-        } catch (e) {
+        } catch {
           setBranches(defaults);
         }
       } else {
@@ -103,7 +111,7 @@ export default function QrCodesPage() {
     return currentBranch?.tables || [];
   };
 
-  const saveBranchesToStorage = (updatedBranches: any[]) => {
+  const saveBranchesToStorage = (updatedBranches: CustomBranch[]) => {
     setBranches(updatedBranches);
     const defaults = RESTAURANTS.find(r => r.id === 1)?.branches || [];
     const customs = updatedBranches.filter(b => !defaults.some(d => d.id === b.id) || b.isCustom);
@@ -118,7 +126,7 @@ export default function QrCodesPage() {
     setIsQrModalOpen(true);
   };
 
-  const handleOpenEditModal = (table: any, index: number) => {
+  const handleOpenEditModal = (table: Table, index: number) => {
     setQrModalMode("edit");
     setEditingTableIndex(index);
     setQrTableName(table.name);
@@ -153,7 +161,7 @@ export default function QrCodesPage() {
         if (b.id === selectedBranchId) {
           return {
             ...b,
-            tables: b.tables.filter((_: any, idx: number) => idx !== index)
+            tables: b.tables.filter((_: Table, idx: number) => idx !== index)
           };
         }
         return b;
@@ -273,9 +281,9 @@ export default function QrCodesPage() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-slate-205" />
+            <div className="h-8 w-px bg-slate-205" />
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-600">{userDisplayName}</span>
@@ -333,7 +341,7 @@ export default function QrCodesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {getCurrentBranchTables().map((table: any, i: number) => {
+                {getCurrentBranchTables().map((table: Table, i: number) => {
                   const tableUrl = `${origin}/burgercraftlab?branch=${selectedBranchId}&table=${table.name.replace("Table ", "")}`;
                   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(tableUrl)}`;
                   
@@ -370,6 +378,7 @@ export default function QrCodesPage() {
                       </div>
 
                       <div className="p-1.5 rounded-tr-xl rounded-bl-xl rounded-tl-none rounded-br-none bg-white text-slate-900 shrink-0 border border-slate-200 shadow-inner w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center overflow-hidden hover:border-[#ff7a00] transition-colors duration-300 relative select-none">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img 
                           src={qrImageUrl} 
                           alt={`${table.name} QR Code`}
@@ -402,7 +411,7 @@ export default function QrCodesPage() {
 
       {/* QR Code Preview Modal */}
       {previewQr && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-100 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div 
             className="bg-white rounded-tr-3xl rounded-bl-3xl rounded-tl-none rounded-br-none p-6 max-w-sm w-full flex flex-col gap-5 shadow-[0_25px_60px_rgba(0,0,0,0.15)] border border-slate-100 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
@@ -425,6 +434,7 @@ export default function QrCodesPage() {
             {/* QR Card Body */}
             <div className="flex flex-col items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center shadow-inner relative group">
               <div className="bg-white p-3 rounded-tr-2xl rounded-bl-2xl rounded-tl-none rounded-br-none border border-slate-200 shadow-md relative flex items-center justify-center select-none">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img 
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(previewQr.url)}`}
                   alt={`${previewQr.name} QR Code`}

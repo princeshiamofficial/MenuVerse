@@ -5,23 +5,46 @@ import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import StatsCard from "../../../ui/StatsCard";
 import DateRangePicker from "../../../ui/DateRangePicker";
-import { RESTAURANTS } from "../data/restaurants";
+import { RESTAURANTS, Branch } from "../data/restaurants";
 import { 
   TrendingUp, 
   Users, 
   ShoppingBag, 
   DollarSign, 
   Menu, 
-  X, 
   Bell, 
   ArrowUpRight, 
-  Plus, 
-  UtensilsCrossed,
   Hand,
   ChevronDown,
   CalendarDays,
   Store
 } from "lucide-react";
+
+interface StoredLiveOrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
+interface StoredLiveOrder {
+  id: string;
+  table: string;
+  items: StoredLiveOrderItem[];
+  status: string;
+  branchId: string;
+  branchName: string;
+}
+
+interface RecentOrder {
+  id: string;
+  table: string;
+  items: string;
+  total: string;
+  status: string;
+  time: string;
+  branchId: string;
+  branchName: string;
+}
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -34,10 +57,9 @@ export default function DashboardPage() {
   // Dynamic user roles and branch states
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
-  const [userAssignedBranchId, setUserAssignedBranchId] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState("all");
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
-  const [allBranches, setAllBranches] = useState<any[]>([]);
+  const [allBranches, setAllBranches] = useState<Branch[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -53,7 +75,6 @@ export default function DashboardPage() {
       
       setUserRole(role);
       setUserDisplayName(name);
-      setUserAssignedBranchId(branchId);
       
       if (role === "manager" && branchId) {
         setSelectedBranchId(branchId);
@@ -63,43 +84,37 @@ export default function DashboardPage() {
 
   // Load default branches + dynamically added branches from Settings
   useEffect(() => {
-    const restaurant = RESTAURANTS.find(r => r.id === 1);
-    const defaults = restaurant?.branches || [];
-    try {
-      const storedBranchesStr = localStorage.getItem("restaurant_branches");
-      if (storedBranchesStr) {
-        const customs = JSON.parse(storedBranchesStr);
-        setAllBranches([...defaults, ...customs]);
-      } else {
-        setAllBranches(defaults);
-      }
-    } catch (e) {
-      setAllBranches(defaults);
-    }
+    fetch("/api/tenant/branches")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllBranches(data);
+        }
+      })
+      .catch(err => console.error("Error loading branches:", err));
   }, []);
 
-  const [liveRecentOrders, setLiveRecentOrders] = useState<any[]>([]);
+  const [liveRecentOrders, setLiveRecentOrders] = useState<RecentOrder[]>([]);
 
   useEffect(() => {
-    try {
-      const storedOrdersStr = localStorage.getItem("live_orders");
-      if (storedOrdersStr) {
-        const liveOrders = JSON.parse(storedOrdersStr);
-        const mappedLive = liveOrders.map((l: any) => ({
-          id: l.id,
-          table: l.table,
-          items: l.items.map((i: any) => `${i.quantity}x ${i.name}`).join(", "),
-          total: `$${l.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0).toFixed(2)}`,
-          status: l.status.charAt(0).toUpperCase() + l.status.slice(1),
-          time: "Just now",
-          branchId: l.branchId,
-          branchName: l.branchName
-        }));
-        setLiveRecentOrders(mappedLive);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    fetch("/api/tenant/orders")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mappedLive = data.map((l: any) => ({
+            id: l.id,
+            table: l.table,
+            items: l.items.map((i: any) => `${i.quantity}x ${i.name}`).join(", "),
+            total: `$${l.total.toFixed(2)}`,
+            status: l.status,
+            time: new Date(l.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            branchId: l.branchId,
+            branchName: l.branchName
+          }));
+          setLiveRecentOrders(mappedLive);
+        }
+      })
+      .catch(err => console.error("Error loading orders:", err));
   }, []);
 
   const displayNameTwoWords = userDisplayName.split(" ").slice(0, 2).join(" ");
@@ -108,48 +123,54 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
-  // Mock Dashboard Stats Data
+  // Calculate Dashboard Stats dynamically from real database orders
   const getBranchStats = () => {
-    const dataMap: Record<string, { revenue: string; activeOrders: string; occupancy: string; avgBill: string }> = {
-      all: { revenue: "$4,850.50", activeOrders: "18", occupancy: "11 / 15", avgBill: "$38.20" },
-      dhanmondi: { revenue: "$2,450.00", activeOrders: "8", occupancy: "6 / 8", avgBill: "$35.50" },
-      gulshan: { revenue: "$1,680.50", activeOrders: "6", occupancy: "3 / 4", avgBill: "$42.00" },
-      uttara: { revenue: "$720.00", activeOrders: "4", occupancy: "2 / 3", avgBill: "$32.00" },
-    };
+    const filteredOrders = selectedBranchId === "all" 
+      ? liveRecentOrders 
+      : liveRecentOrders.filter(o => o.branchId === selectedBranchId);
 
-    // Calculate a default if we dynamically added a branch in Settings
-    const activeData = dataMap[selectedBranchId] || {
-      revenue: "$150.00",
-      activeOrders: "1",
-      occupancy: "1 / 5",
-      avgBill: "$25.00"
-    };
+    const activeOrdersCount = filteredOrders.filter(o => o.status === "Pending" || o.status === "Preparing" || o.status === "Ready").length;
+    
+    const completedOrders = filteredOrders.filter(o => o.status !== "Cancelled");
+    const totalRev = completedOrders.reduce((sum, o) => {
+      const val = parseFloat(o.total.replace('$', ''));
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+
+    const filteredBranches = selectedBranchId === "all" 
+      ? allBranches 
+      : allBranches.filter(b => b.id === selectedBranchId);
+    
+    const totalTables = filteredBranches.reduce((sum, b) => sum + (b.tables?.length || 0), 0);
+    const occupiedTables = Math.min(activeOrdersCount, totalTables);
+
+    const avgBillVal = completedOrders.length > 0 ? (totalRev / completedOrders.length) : 0;
 
     return [
       { 
         label: "Total Revenue", 
-        value: activeData.revenue, 
+        value: `$${totalRev.toFixed(2)}`, 
         icon: DollarSign, 
         iconColorClass: "text-[#10B981]", 
         iconBgClass: "bg-[#E6F4EA]" 
       },
       { 
         label: "Active Orders", 
-        value: activeData.activeOrders, 
+        value: activeOrdersCount.toString(), 
         icon: ShoppingBag, 
         iconColorClass: "text-[#EA580C]", 
         iconBgClass: "bg-[#FFF3D2]" 
       },
       { 
         label: "Table Occupancy", 
-        value: activeData.occupancy, 
+        value: `${occupiedTables} / ${totalTables || 12}`, 
         icon: Users, 
         iconColorClass: "text-[#1A73E8]", 
         iconBgClass: "bg-[#E8F0FE]" 
       },
       { 
         label: "Average Bill", 
-        value: activeData.avgBill, 
+        value: `$${avgBillVal.toFixed(2)}`, 
         icon: TrendingUp, 
         iconColorClass: "text-[#E11D48]", 
         iconBgClass: "bg-[#FCE8E6]" 
@@ -275,10 +296,10 @@ export default function DashboardPage() {
               </button>
             </div>
             
-            <div className="h-8 w-[1px] bg-slate-205" />
+            <div className="h-8 w-px bg-slate-205" />
             
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-600">{userDisplayName}</span>
@@ -290,9 +311,9 @@ export default function DashboardPage() {
         <main className="p-6 w-full flex-1 flex flex-col gap-6">
           
           {/* Section: Welcome */}
-          <div className="bg-gradient-to-r from-[#1c2b4a] to-[#f97415] text-white p-6 sm:p-8 rounded-xl shadow-xl print:hidden">
+          <div className="bg-linear-to-r from-[#1c2b4a] to-[#f97415] text-white p-6 sm:p-8 rounded-xl shadow-xl print:hidden">
             <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
-              Welcome {displayNameTwoWords} <Hand className="ml-2 h-7 w-7 transform rotate-[20deg] text-yellow-300" />
+              Welcome {displayNameTwoWords} <Hand className="ml-2 h-7 w-7 transform rotate-20 text-yellow-300" />
             </h1>
             <p className="text-sm sm:text-base text-white/90 mt-1">
               Here&apos;s an overview of your business activity.
@@ -438,10 +459,10 @@ export default function DashboardPage() {
                     {/* Bar */}
                     <div 
                       style={{ height: item.height }}
-                      className="w-full rounded-[8px] bg-gradient-to-t from-[#ff7a00]/70 to-[#ff7a00] group-hover:from-amber-500 group-hover:to-[#ff7a00] transition-all duration-300 relative shadow-[0_2px_8px_rgba(255,122,0,0.15)] overflow-hidden"
+                      className="w-full rounded-[8px] bg-linear-to-t from-[#ff7a00]/70 to-[#ff7a00] group-hover:from-amber-500 group-hover:to-[#ff7a00] transition-all duration-300 relative shadow-[0_2px_8px_rgba(255,122,0,0.15)] overflow-hidden"
                     >
                       {/* Highlight sweep */}
-                      <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                      <div className="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                     </div>
                     {/* Label */}
                     <span className="text-[10px] font-semibold text-slate-500 group-hover:text-slate-800 transition-colors">{item.day}</span>

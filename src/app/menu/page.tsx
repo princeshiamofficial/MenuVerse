@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import { RESTAURANTS } from "../data/restaurants";
+import ImageUploader from "../../../ui/ImageUploader";
 import { EmojiProvider, Emoji } from "react-apple-emojis";
 import emojiData from "react-apple-emojis/src/data.json";
 import {
@@ -13,9 +14,6 @@ import {
   Star,
   Check,
   Utensils,
-  AlertCircle,
-  Eye,
-  EyeOff,
   Plus,
   Edit,
   Trash2,
@@ -129,9 +127,9 @@ const getCategoryAppleEmojiName = (category: string): string => {
   return map[category.trim().toLowerCase()] || "sparkles";
 };
 
-export default function MenuAvailabilityPage() {
+export default function MenuPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("menu-availability");
+  const [activeTab, setActiveTab] = useState("menu");
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -155,31 +153,21 @@ export default function MenuAvailabilityPage() {
     router.push("/login");
   };
 
-  // Flatten items from all restaurants to get a full catalog, and enrich with custom state
-  const initialItems = React.useMemo(() => {
-    const allItems: MenuItemWithState[] = [];
-    RESTAURANTS.forEach(restaurant => {
-      restaurant.menuItems.forEach(item => {
-        // Prevent duplicate IDs from different restaurants
-        const uniqueId = restaurant.id * 1000 + item.id;
-        if (!allItems.some(x => x.id === uniqueId)) {
-          allItems.push({
-            id: uniqueId,
-            name: item.name,
-            description: item.description,
-            price: item.price,
-            image: item.image,
-            category: item.category,
-            popular: !!item.popular,
-            available: true // Default to available
-          });
-        }
-      });
-    });
-    return allItems;
-  }, []);
+  const [items, setItems] = useState<MenuItemWithState[]>([]);
 
-  const [items, setItems] = useState<MenuItemWithState[]>(initialItems);
+  useEffect(() => {
+    fetch("/api/tenant/menu")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setItems(data.map((item: any) => ({
+            ...item,
+            available: true
+          })));
+        }
+      })
+      .catch(err => console.error("Error loading menu items:", err));
+  }, []);
 
   // Extract unique categories
   const categories = React.useMemo(() => {
@@ -204,39 +192,84 @@ export default function MenuAvailabilityPage() {
     }));
   };
 
-  const togglePopular = (itemId: number) => {
-    setItems(prev => prev.map(item => {
-      if (item.id === itemId) {
-        const nextState = !item.popular;
-        triggerToast(`"${item.name}" ${nextState ? "added to" : "removed from"} Popular Highlights`);
-        return { ...item, popular: nextState };
+  const togglePopular = async (itemId: number) => {
+    const target = items.find(x => x.id === itemId);
+    if (!target) return;
+    const nextPopular = !target.popular;
+
+    try {
+      const response = await fetch("/api/tenant/menu", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: target.id,
+          name: target.name,
+          description: target.description,
+          price: target.price,
+          image: target.image,
+          category: target.category,
+          popular: nextPopular
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setItems(prev => prev.map(item => {
+          if (item.id === itemId) {
+            triggerToast(`"${item.name}" ${nextPopular ? "added to" : "removed from"} Popular Highlights`);
+            return { ...item, popular: nextPopular };
+          }
+          return item;
+        }));
+      } else {
+        triggerToast(data.error || "Failed to update highlights.");
       }
-      return item;
-    }));
+    } catch (err) {
+      triggerToast("Connection failed.");
+    }
   };
 
-  const handleAddItem = (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!menuName || !menuCategory) return;
 
-    // Generate a unique ID (finding max and adding 1)
-    const newId = items.length > 0 ? Math.max(...items.map(x => x.id)) + 1 : 10001;
     const defaultImage = menuImage || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&auto=format&fit=crop&q=80";
 
-    const newItem: MenuItemWithState = {
-      id: newId,
-      name: menuName,
-      description: menuDescription,
-      price: menuPrice,
-      image: defaultImage,
-      category: menuCategory,
-      popular: false,
-      available: true,
-      emoji: menuEmoji
-    };
+    try {
+      const response = await fetch("/api/tenant/menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: menuName,
+          description: menuDescription,
+          price: menuPrice,
+          image: defaultImage,
+          category: menuCategory,
+          popular: false
+        })
+      });
 
-    setItems(prev => [...prev, newItem]);
-    triggerToast(`Added "${menuName}" to the menu.`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const newItem: MenuItemWithState = {
+          id: data.id,
+          name: menuName,
+          description: menuDescription,
+          price: menuPrice,
+          image: defaultImage,
+          category: menuCategory,
+          popular: false,
+          available: true,
+          emoji: menuEmoji
+        };
+        setItems(prev => [newItem, ...prev]);
+        triggerToast(`Added "${menuName}" to the menu.`);
+      } else {
+        triggerToast(data.error || "Failed to add menu item.");
+      }
+    } catch (err) {
+      triggerToast("Connection failed.");
+    }
 
     // Reset Form
     setMenuName("");
@@ -259,37 +292,72 @@ export default function MenuAvailabilityPage() {
     setShowEditModal(true);
   };
 
-  const handleEditItem = (e: React.FormEvent) => {
+  const handleEditItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem || !menuName || !menuCategory) return;
 
-    setItems(prev => prev.map(x => {
-      if (x.id === editingItem.id) {
-        return {
-          ...x,
+    try {
+      const response = await fetch("/api/tenant/menu", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingItem.id,
           name: menuName,
-          price: menuPrice,
-          category: menuCategory,
           description: menuDescription,
+          price: menuPrice,
           image: menuImage,
-          emoji: menuEmoji
-        };
-      }
-      return x;
-    }));
+          category: menuCategory,
+          popular: editingItem.popular
+        })
+      });
 
-    triggerToast(`Updated "${menuName}" details.`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setItems(prev => prev.map(x => {
+          if (x.id === editingItem.id) {
+            return {
+              ...x,
+              name: menuName,
+              price: menuPrice,
+              category: menuCategory,
+              description: menuDescription,
+              image: menuImage,
+              emoji: menuEmoji
+            };
+          }
+          return x;
+        }));
+        triggerToast(`Updated "${menuName}" details.`);
+      } else {
+        triggerToast(data.error || "Failed to update menu item.");
+      }
+    } catch (err) {
+      triggerToast("Connection failed.");
+    }
+
     setShowEditModal(false);
     setEditingItem(null);
     setMenuEmoji("hamburger");
   };
 
-  const handleDeleteItem = (itemId: number) => {
+  const handleDeleteItem = async (itemId: number) => {
     const itemToDelete = items.find(x => x.id === itemId);
     if (!itemToDelete) return;
     if (confirm(`Are you sure you want to delete "${itemToDelete.name}" from the menu?`)) {
-      setItems(prev => prev.filter(x => x.id !== itemId));
-      triggerToast(`Removed "${itemToDelete.name}" from the menu.`);
+      try {
+        const response = await fetch(`/api/tenant/menu?id=${itemId}`, {
+          method: "DELETE"
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setItems(prev => prev.filter(x => x.id !== itemId));
+          triggerToast(`Removed "${itemToDelete.name}" from the menu.`);
+        } else {
+          triggerToast(data.error || "Failed to delete item.");
+        }
+      } catch (err) {
+        triggerToast("Connection failed.");
+      }
     }
   };
 
@@ -361,9 +429,9 @@ export default function MenuAvailabilityPage() {
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
                 </button>
               </div>
-              <div className="h-8 w-[1px] bg-slate-205" />
+              <div className="h-8 w-px bg-slate-205" />
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+                <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                   CH
                 </div>
                 <span className="hidden md:inline text-xs font-semibold text-slate-600">Color Hut Admin</span>
@@ -445,6 +513,7 @@ export default function MenuAvailabilityPage() {
                   {/* Product Image */}
                   <div className="relative w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-slate-100 border border-slate-200 flex items-center justify-center">
                     {item.image ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={item.image}
                         alt={item.name}
@@ -614,14 +683,22 @@ export default function MenuAvailabilityPage() {
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-500">Image URL</label>
-                      <input
-                        type="text"
-                        placeholder="Leave empty for default food image"
-                        value={menuImage}
-                        onChange={(e) => setMenuImage(e.target.value)}
-                        className="w-full text-xs px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-[#ff7a00] text-slate-800 font-medium font-mono"
-                      />
+                      <label className="text-[10px] uppercase font-bold text-slate-500">Image</label>
+                      <div className="flex h-9">
+                        <input
+                          type="text"
+                          placeholder="Leave empty for default food image"
+                          value={menuImage}
+                          onChange={(e) => setMenuImage(e.target.value)}
+                          className="flex-1 h-full text-xs px-3.5 rounded-l-xl rounded-r-none border border-slate-200 border-r-0 focus:outline-none focus:border-[#ff7a00] text-slate-800 font-medium font-mono"
+                        />
+                        <ImageUploader 
+                          onUploadSuccess={setMenuImage} 
+                          label="Upload" 
+                          className="h-full shrink-0"
+                          buttonClassName="rounded-l-none h-full text-[10px]"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-1">
@@ -741,14 +818,22 @@ export default function MenuAvailabilityPage() {
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <label className="text-[10px] uppercase font-bold text-slate-500">Image URL</label>
-                      <input
-                        type="text"
-                        placeholder="Image link URL"
-                        value={menuImage}
-                        onChange={(e) => setMenuImage(e.target.value)}
-                        className="w-full text-xs px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-[#ff7a00] text-slate-800 font-medium font-mono"
-                      />
+                      <label className="text-[10px] uppercase font-bold text-slate-500">Image</label>
+                      <div className="flex h-9">
+                        <input
+                          type="text"
+                          placeholder="Image link URL"
+                          value={menuImage}
+                          onChange={(e) => setMenuImage(e.target.value)}
+                          className="flex-1 h-full text-xs px-3.5 rounded-l-xl rounded-r-none border border-slate-200 border-r-0 focus:outline-none focus:border-[#ff7a00] text-slate-800 font-medium font-mono"
+                        />
+                        <ImageUploader 
+                          onUploadSuccess={setMenuImage} 
+                          label="Upload" 
+                          className="h-full shrink-0"
+                          buttonClassName="rounded-l-none h-full text-[10px]"
+                        />
+                      </div>
                     </div>
 
                     <div className="flex flex-col gap-1">

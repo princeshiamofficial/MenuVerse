@@ -3,18 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import { RESTAURANTS } from "../data/restaurants";
+import { RESTAURANTS, Branch } from "../data/restaurants";
 import { 
   Menu, 
   Bell, 
   Search, 
-  Filter, 
-  Check, 
   X, 
   Clock, 
-  RotateCcw,
-  Printer,
-  ChevronDown
+  Printer
 } from "lucide-react";
 
 interface Order {
@@ -41,9 +37,8 @@ export default function OrdersPage() {
   // Dynamic user roles and branch states
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
-  const [userAssignedBranchId, setUserAssignedBranchId] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState("all");
-  const [allBranches, setAllBranches] = useState<any[]>([]);
+  const [allBranches, setAllBranches] = useState<Branch[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -59,7 +54,6 @@ export default function OrdersPage() {
       
       setUserRole(role);
       setUserDisplayName(name);
-      setUserAssignedBranchId(branchId);
       
       if (role === "manager" && branchId) {
         setSelectedBranchId(branchId);
@@ -71,129 +65,68 @@ export default function OrdersPage() {
 
   // Load branches
   useEffect(() => {
-    const restaurant = RESTAURANTS.find(r => r.id === 1);
-    const defaults = restaurant?.branches || [];
-    try {
-      const storedBranchesStr = localStorage.getItem("restaurant_branches");
-      if (storedBranchesStr) {
-        const customs = JSON.parse(storedBranchesStr);
-        setAllBranches([...defaults, ...customs]);
-      } else {
-        setAllBranches(defaults);
-      }
-    } catch (e) {
-      setAllBranches(defaults);
-    }
+    fetch("/api/tenant/branches")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAllBranches(data);
+        }
+      })
+      .catch(err => console.error("Error loading branches:", err));
   }, []);
 
   const handleLogout = () => {
     router.push("/login");
   };
 
-  // Mock Orders Data (with branchId/branchName fields)
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: "ORD-8821",
-      table: "04",
-      items: [
-        { name: "Classic Cheese Burger", quantity: 2, price: 8.50 },
-        { name: "Truffle Parmesan Fries", quantity: 1, price: 5.00 }
-      ],
-      time: "16:35",
-      status: "preparing",
-      paymentType: "Card",
-      customerName: "Imran Khan",
-      branchId: "dhanmondi",
-      branchName: "Dhanmondi"
-    },
-    {
-      id: "ORD-8820",
-      table: "12",
-      items: [
-        { name: "Truffle Mushroom Pizza", quantity: 1, price: 18.00 },
-        { name: "Fresh Mint Lemonade", quantity: 1, price: 3.50 }
-      ],
-      time: "16:32",
-      status: "pending",
-      paymentType: "Unpaid",
-      branchId: "gulshan",
-      branchName: "Gulshan"
-    },
-    {
-      id: "ORD-8819",
-      table: "08",
-      items: [
-        { name: "Dragon Sushi Roll Platter", quantity: 1, price: 22.50 },
-        { name: "Spicy Sichuan Chilli Wontons", quantity: 1, price: 11.00 }
-      ],
-      time: "16:25",
-      status: "ready",
-      paymentType: "Cash",
-      customerName: "Ayesha Rahman",
-      branchId: "uttara",
-      branchName: "Uttara"
-    },
-    {
-      id: "ORD-8818",
-      table: "02",
-      items: [
-        { name: "Truffle Mushroom Pizza", quantity: 3, price: 18.00 }
-      ],
-      time: "16:18",
-      status: "completed",
-      paymentType: "Card",
-      branchId: "dhanmondi",
-      branchName: "Dhanmondi"
-    },
-    {
-      id: "ORD-8817",
-      table: "05",
-      items: [
-        { name: "Spicy Sichuan Chilli Wontons", quantity: 2, price: 11.00 },
-        { name: "Fresh Mint Lemonade", quantity: 2, price: 3.50 }
-      ],
-      time: "16:02",
-      status: "cancelled",
-      paymentType: "Unpaid",
-      branchId: "gulshan",
-      branchName: "Gulshan"
-    },
-    {
-      id: "ORD-8816",
-      table: "15",
-      items: [
-        { name: "Classic Cheese Burger", quantity: 1, price: 8.50 },
-        { name: "Truffle Parmesan Fries", quantity: 1, price: 5.00 }
-      ],
-      time: "15:45",
-      status: "unpaid",
-      paymentType: "Unpaid",
-      customerName: "Tanvir Hasan",
-      branchId: "uttara",
-      branchName: "Uttara"
-    }
-  ]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
-  // Load custom live orders from localStorage
+  // Load live orders from database API
+  const refreshOrders = () => {
+    fetch("/api/tenant/orders")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setOrders(data.map((o: any) => ({
+            id: o.id,
+            table: o.table,
+            items: o.items,
+            time: new Date(o.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: o.status.toLowerCase(),
+            paymentType: "Unpaid",
+            branchId: o.branchId,
+            branchName: o.branchName
+          })));
+        }
+      })
+      .catch(err => console.error("Error loading orders:", err));
+  };
+
   useEffect(() => {
-    try {
-      const storedOrdersStr = localStorage.getItem("live_orders");
-      if (storedOrdersStr) {
-        const liveOrders = JSON.parse(storedOrdersStr);
-        setOrders(prev => {
-          const filteredLive = liveOrders.filter((l: any) => !prev.some(p => p.id === l.id));
-          return [...filteredLive, ...prev];
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    refreshOrders();
   }, []);
 
-  const updateOrderStatus = (orderId: string, newStatus: Order["status"]) => {
-    setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+  const updateOrderStatus = async (orderId: string, newStatus: Order["status"]) => {
+    try {
+      // Capitalize to match db values (e.g. Preparing, Ready, Completed, etc.)
+      const dbStatus = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+      const response = await fetch("/api/tenant/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: orderId, status: dbStatus })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder({ ...selectedOrder, status: newStatus });
+        }
+      } else {
+        alert(data.error || "Failed to update order status.");
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
     }
   };
 
@@ -421,9 +354,9 @@ export default function OrdersPage() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-slate-205" />
+            <div className="h-8 w-px bg-slate-205" />
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-600">{userDisplayName}</span>

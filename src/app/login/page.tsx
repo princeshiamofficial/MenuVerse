@@ -20,11 +20,22 @@ export default function LoginPage() {
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    if (localStorage.getItem("isLoggedIn") === "true") {
-      router.replace("/dashboard");
-    } else {
-      setIsCheckingAuth(false);
-    }
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.authenticated) {
+          localStorage.setItem("isLoggedIn", "true");
+          localStorage.setItem("userRole", data.user.role);
+          localStorage.setItem("userDisplayName", data.user.name);
+          localStorage.setItem("userAssignedBranchId", data.user.assignedBranchId || "");
+          router.replace("/dashboard");
+        } else {
+          setIsCheckingAuth(false);
+        }
+      })
+      .catch(() => {
+        setIsCheckingAuth(false);
+      });
   }, [router]);
 
   const showToast = (text: string, type: "success" | "error" = "success") => {
@@ -50,63 +61,39 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
     setIsLoading(true);
 
-    // Simulate login request to an API
-    setTimeout(() => {
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
       setIsLoading(false);
 
-      // Check default users
-      let matchedUser = null;
-      if (email === "demo@example.com" && password === "password123") {
-        matchedUser = { email, role: "admin", name: "Color Hut Admin", assignedBranchId: "" };
-      } else if (email === "admin@example.com" && password === "password123") {
-        matchedUser = { email, role: "admin", name: "Color Hut Admin", assignedBranchId: "" };
-      } else if (email === "dhanmondi@example.com" && password === "password123") {
-        matchedUser = { email, role: "manager", name: "Dhanmondi Manager", assignedBranchId: "dhanmondi" };
-      } else if (email === "gulshan@example.com" && password === "password123") {
-        matchedUser = { email, role: "manager", name: "Gulshan Manager", assignedBranchId: "gulshan" };
-      } else if (email === "uttara@example.com" && password === "password123") {
-        matchedUser = { email, role: "manager", name: "Uttara Manager", assignedBranchId: "uttara" };
-      } else {
-        // Check dynamic staff stored in localStorage
-        try {
-          const storedStaffStr = localStorage.getItem("restaurant_staff");
-          if (storedStaffStr) {
-            const staffList = JSON.parse(storedStaffStr);
-            const found = staffList.find((s: any) => s.email.toLowerCase() === email.toLowerCase() && s.password === password);
-            if (found) {
-              matchedUser = {
-                email: found.email,
-                role: found.role === "Admin" ? "admin" : "manager",
-                name: found.name,
-                assignedBranchId: found.assignedBranchId || ""
-              };
-            }
-          }
-        } catch (err) {
-          console.error("Error reading stored staff:", err);
-        }
-      }
-
-      if (matchedUser) {
+      if (response.ok && data.success) {
         localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userRole", matchedUser.role);
-        localStorage.setItem("userDisplayName", matchedUser.name);
-        localStorage.setItem("userAssignedBranchId", matchedUser.assignedBranchId);
+        localStorage.setItem("userRole", data.user.role);
+        localStorage.setItem("userDisplayName", data.user.name);
+        localStorage.setItem("userAssignedBranchId", data.user.assignedBranchId || "");
         
         showToast("Logged in successfully! Redirecting...", "success");
         setTimeout(() => {
           router.push("/dashboard");
         }, 1500);
       } else {
-        showToast("Invalid credentials. Try admin@example.com or dhanmondi@example.com with password123", "error");
+        showToast(data.error || "Invalid credentials. Try admin@example.com with password123", "error");
       }
-    }, 1800);
+    } catch (err) {
+      setIsLoading(false);
+      showToast("Connection to authentication server failed.", "error");
+    }
   };
 
   if (isCheckingAuth) {
@@ -123,8 +110,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-deep-emerald-950 flex flex-col relative overflow-hidden text-neutral-100 font-sans selection:bg-emerald-800 selection:text-white">
       {/* Decorative Organic Glow Blobs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-emerald-700/10 blur-[120px] pointer-events-none animate-pulse duration-[8000ms]" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-teal-800/10 blur-[150px] pointer-events-none animate-pulse duration-[10000ms]" />
+      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-emerald-700/10 blur-[120px] pointer-events-none animate-pulse duration-8000" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-teal-800/10 blur-[150px] pointer-events-none animate-pulse duration-10000" />
       
 
 
@@ -285,7 +272,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="mt-2 w-full h-11 flex items-center justify-center gap-2 rounded-[14px] bg-gradient-to-r from-emerald-500 to-teal-500 text-deep-emerald-950 font-bold text-[14px] hover:from-emerald-400 hover:to-teal-400 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none transition-all duration-200 focus:outline-none shadow-[0_4px_16px_rgba(16,185,129,0.15)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.25)]"
+              className="mt-2 w-full h-11 flex items-center justify-center gap-2 rounded-[14px] bg-linear-to-r from-emerald-500 to-teal-500 text-deep-emerald-950 font-bold text-[14px] hover:from-emerald-400 hover:to-teal-400 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:pointer-events-none transition-all duration-200 focus:outline-none shadow-[0_4px_16px_rgba(16,185,129,0.15)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.25)]"
             >
               {isLoading ? (
                 <svg className="animate-spin h-5 w-5 text-deep-emerald-950" fill="none" viewBox="0 0 24 24">

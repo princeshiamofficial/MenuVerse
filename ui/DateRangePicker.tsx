@@ -70,8 +70,12 @@ export default function DateRangePicker({
   const leftMonth = currentMonth;
   const rightMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1);
 
-  // Sync calendar with selected range or default to today's date when opened
-  useEffect(() => {
+  // Adjust state during render when isOpen or selectedRange changes to avoid useEffect setState
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevSelectedRange, setPrevSelectedRange] = useState(selectedRange);
+  if (isOpen !== prevIsOpen || selectedRange !== prevSelectedRange) {
+    setPrevIsOpen(isOpen);
+    setPrevSelectedRange(selectedRange);
     if (isOpen) {
       const isPreset = RANGE_OPTIONS.includes(selectedRange) || selectedRange === "Custom Range";
       if (isPreset) {
@@ -92,7 +96,7 @@ export default function DateRangePicker({
         }
       }
     }
-  }, [isOpen, selectedRange]);
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {

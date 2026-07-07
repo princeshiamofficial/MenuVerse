@@ -5,7 +5,7 @@ import Image from "next/image";
 import { notFound, useSearchParams } from "next/navigation";
 import { useHorizontalScroll } from "../../lib/hooks";
 
-import { RESTAURANTS, MenuItem } from "../data/restaurants";
+import { MenuItem, Restaurant, Branch } from "../data/restaurants";
 import Toast from "../../../ui/toast";
 import Button from "../../../ui/button";
 import { EmojiProvider, Emoji } from "react-apple-emojis";
@@ -22,12 +22,8 @@ import {
   Phone,
   Info,
   ThumbsUp,
-  UserCheck,
-  UserPlus,
   Share2,
   Calendar,
-  ChevronDown,
-  ChevronUp,
   Utensils,
   ClipboardList,
   MoreVertical,
@@ -67,62 +63,7 @@ const MOCK_REVIEWS_MAP: { [key: number]: Array<{ author: string; date: string; s
   ]
 };
 
-// Custom pixel-perfect SVG Icons matching the reference image layout
-const BillIcon = ({ className }: { className?: string }) => (
-  <svg width="22" height="16" viewBox="0 0 22 16" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="22" height="16" rx="3.5" fill="currentColor" />
-    <rect x="3.5" y="3.5" width="15" height="2.5" fill="white" />
-  </svg>
-);
-
-const ListIcon = ({ className }: { className?: string }) => (
-  <svg width="20" height="17" viewBox="0 0 20 17" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="20" height="17" rx="4.5" fill="currentColor" />
-    <rect x="5" y="5" width="10" height="3.5" rx="1.2" fill="white" />
-    <path d="M8 8.5 H12 V11.5 C12 12.5 11.5 12.5 10 12.5 C8.5 12.5 8 12.5 8 11.5 Z" fill="white" />
-  </svg>
-);
-
-const CalendarIcon = ({ className }: { className?: string }) => (
-  <svg width="20" height="20" viewBox="0 0 20 20" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="4" width="16" height="14" rx="2.5" fill="white" />
-    <rect x="5.5" y="1" width="2" height="5.5" rx="1" fill="white" />
-    <rect x="12.5" y="1" width="2" height="5.5" rx="1" fill="white" />
-    <rect x="5.5" y="9" width="9" height="2" rx="0.5" fill="black" />
-    <rect x="5.5" y="13" width="6" height="2" rx="0.5" fill="black" />
-  </svg>
-);
-
-const BagIcon = ({ className }: { className?: string }) => (
-  <svg width="16" height="22" viewBox="0 0 16 22" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M 0 2 
-             A 2 2 0 0 1 2 0 
-             L 14 0 
-             A 2 2 0 0 1 16 2 
-             L 16 8 
-             A 3 3 0 0 0 13 11
-             A 3 3 0 0 0 16 14
-             L 16 20 
-             A 2 2 0 0 1 14 22 
-             L 2 22 
-             A 2 2 0 0 1 0 20 
-             L 0 14 
-             A 3 3 0 0 0 3 11
-             A 3 3 0 0 0 0 8 
-             Z" />
-    <circle cx="8" cy="5.5" r="1.2" fill="white" />
-    <circle cx="8" cy="11" r="1.2" fill="white" />
-    <circle cx="8" cy="16.5" r="1.2" fill="white" />
-  </svg>
-);
-
-const MyIcon = ({ className }: { className?: string }) => (
-  <svg width="22" height="22" viewBox="0 0 22 22" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="11" cy="11" r="10" stroke="currentColor" strokeWidth="2.5" fill="none" />
-    <circle cx="11" cy="7.5" r="3" fill="currentColor" />
-    <path d="M4.5 17C4.5 14.5 7.5 13 11 13C14.5 13 17.5 14.5 17.5 17" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-  </svg>
-);
+// Custom SVG Icons (unused)
 
 const getCategoryAppleEmojiName = (category: string): string => {
   const map: Record<string, string> = {
@@ -143,6 +84,20 @@ const getCategoryAppleEmojiName = (category: string): string => {
   return map[category.trim().toLowerCase()] || "sparkles";
 };
 
+const renderFormattedText = (text: string) => {
+  if (!text) return null;
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={index} className="text-neutral-800 font-bold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <strong key={index} className="text-neutral-800 font-bold">{part.slice(1, -1)}</strong>;
+    }
+    return part;
+  });
+};
+
 export default function RestaurantMenuPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const username = resolvedParams.username;
@@ -150,66 +105,121 @@ export default function RestaurantMenuPage({ params }: PageProps) {
   const tableNumber = searchParams.get("table") || "12";
   const branchId = searchParams.get("branch") || "";
 
-  // Find the restaurant by username slug
-  const restaurant = useMemo(() => {
-    return RESTAURANTS.find(
-      (r) => r.username.toLowerCase() === username.toLowerCase()
-    );
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!username) return;
+    setIsLoading(true);
+    fetch(`/api/restaurants/${username}`)
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error("Restaurant not found");
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setRestaurant(data);
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setIsLoading(false);
+      });
   }, [username]);
 
-  // Load custom branches if any, or default branches from RESTAURANTS
+
+
+  // Load custom branches if any, or default branches from restaurant data
   const allBranches = useMemo(() => {
     if (!restaurant) return [];
-    const defaults = restaurant.branches || [];
-    if (typeof window !== "undefined") {
-      try {
-        const storedBranchesStr = localStorage.getItem("restaurant_branches");
-        if (storedBranchesStr) {
-          const customs = JSON.parse(storedBranchesStr);
-          return [...defaults, ...customs];
-        }
-      } catch (e) {}
-    }
-    return defaults;
+    return restaurant.branches || [];
   }, [restaurant]);
-
-  // Find the selected branch name
-  const branchName = useMemo(() => {
-    if (!branchId) return "";
-    const b = allBranches.find((x) => x.id === branchId);
-    return b ? b.name : "";
-  }, [branchId, allBranches]);
 
   // Find the selected branch address
   const branchAddress = useMemo(() => {
-    if (!branchId) return "";
-    const b = allBranches.find((x) => x.id === branchId);
-    return b ? b.location : "";
-  }, [branchId, allBranches]);
+    const targetBranchId = branchId || (allBranches && allBranches[0]?.id) || "";
+    if (!targetBranchId) return restaurant?.location || "";
+    const target = targetBranchId.toLowerCase().trim();
+    const b = allBranches.find((x: Branch) => 
+      x.id.toLowerCase().trim() === target || 
+      x.name.toLowerCase().trim() === target
+    );
+    return b ? b.location : (restaurant?.location || "");
+  }, [branchId, allBranches, restaurant]);
 
-  // Slideshow images for the cover
+  // Find the selected branch operating hours
+  const branchHours = useMemo(() => {
+    const targetBranchId = branchId || (allBranches && allBranches[0]?.id) || "";
+    if (!targetBranchId) return restaurant?.operatingHours || "";
+    const target = targetBranchId.toLowerCase().trim();
+    const b = allBranches.find((x: Branch) => 
+      x.id.toLowerCase().trim() === target || 
+      x.name.toLowerCase().trim() === target
+    );
+    return b ? b.operatingHours : (restaurant?.operatingHours || "");
+  }, [branchId, allBranches, restaurant]);
+
+  // Find the selected branch phone number
+  const branchPhone = useMemo(() => {
+    const targetBranchId = branchId || (allBranches && allBranches[0]?.id) || "";
+    if (!targetBranchId) return restaurant?.phone || "";
+    const target = targetBranchId.toLowerCase().trim();
+    const b = allBranches.find((x: Branch) => 
+      x.id.toLowerCase().trim() === target || 
+      x.name.toLowerCase().trim() === target
+    );
+    return b ? b.phone : (restaurant?.phone || "");
+  }, [branchId, allBranches, restaurant]);
+
+  // Slideshow images for the cover — restaurant cover/offer slides only (no menu item images)
   const slideshowImages = useMemo(() => {
     if (!restaurant) return [];
-    const images = [restaurant.image];
-    if (restaurant.menuItems) {
-      restaurant.menuItems.forEach((item) => {
-        if (item.image && !images.includes(item.image)) {
-          images.push(item.image);
-        }
-      });
+    
+    let slides: string[] | string | undefined = restaurant.offerSlides || restaurant.offer_slides;
+    
+    if (typeof slides === "string") {
+      try {
+        slides = JSON.parse(slides);
+      } catch {
+        slides = undefined;
+      }
     }
-    return images;
+    
+    if (typeof slides === "string") {
+      try {
+        slides = JSON.parse(slides);
+      } catch {
+        slides = undefined;
+      }
+    }
+
+    if (Array.isArray(slides) && slides.length > 0) {
+      return slides as string[];
+    }
+    
+    return restaurant.image ? [restaurant.image] : [];
   }, [restaurant]);
+
 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [prevSlide, setPrevSlide] = useState<number | null>(null);
   const [slideDirection, setSlideDirection] = useState<"next" | "prev">("next");
 
-  useEffect(() => {
+  // Adjust state during render when restaurant changes to avoid useEffect setState
+  const [prevRestaurantId, setPrevRestaurantId] = useState(restaurant?.id);
+  if (restaurant?.id !== prevRestaurantId) {
+    setPrevRestaurantId(restaurant?.id);
     setCurrentSlide(0);
     setPrevSlide(null);
     setSlideDirection("next");
-  }, [restaurant]);
+  }
 
   useEffect(() => {
     if (slideshowImages.length <= 1) return;
@@ -221,27 +231,14 @@ export default function RestaurantMenuPage({ params }: PageProps) {
     return () => clearInterval(interval);
   }, [slideshowImages, currentSlide]);
 
-  // Handle page-level 404 fallback
-  if (!restaurant) {
-    notFound();
-  }
+
+
 
   // Active Tab state (Facebook profile style: Menu, About, Reviews)
   const [activeTab, setActiveTab] = useState<"menu" | "about" | "reviews" | "orders">("menu");
 
   // Follower interaction states
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followersCount, setFollowersCount] = useState(parseInt(restaurant.reviews) * 3 + 245);
-
-  const handleFollowToggle = () => {
-    if (isFollowing) {
-      setIsFollowing(false);
-      setFollowersCount((prev) => prev - 1);
-    } else {
-      setIsFollowing(true);
-      setFollowersCount((prev) => prev + 1);
-    }
-  };
+  // const [isFollowing] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -318,18 +315,21 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
   // Extract menu categories dynamically
   const categories = useMemo(() => {
-    const cats = new Set(restaurant.menuItems.map((item) => item.category));
+    if (!restaurant || !restaurant.menuItems) return ["All", "Popular"];
+    const cats = new Set<string>(restaurant.menuItems.map((item: MenuItem) => item.category as string));
     return ["All", "Popular", ...Array.from(cats)];
   }, [restaurant]);
 
   // Dynamic review comments list
   const reviewsList = useMemo(() => {
+    if (!restaurant) return [];
     return MOCK_REVIEWS_MAP[restaurant.id] || [];
   }, [restaurant]);
 
   // Filter menu items by active tab category and search term
   const filteredItems = useMemo(() => {
-    return restaurant.menuItems.filter((item) => {
+    if (!restaurant || !restaurant.menuItems) return [];
+    return restaurant.menuItems.filter((item: MenuItem) => {
       const matchesSearch =
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -365,9 +365,10 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
   // Cart Summary details
   const cartItemsList = useMemo(() => {
+    if (!restaurant || !restaurant.menuItems) return [];
     return Object.keys(cart).map((idStr) => {
       const id = parseInt(idStr);
-      const item = restaurant.menuItems.find((m) => m.id === id)!;
+      const item = restaurant.menuItems.find((m: MenuItem) => m.id === id)!;
       return {
         item,
         quantity: cart[id],
@@ -386,44 +387,45 @@ export default function RestaurantMenuPage({ params }: PageProps) {
     );
   }, [cartItemsList]);
 
-  // Trigger simulated order submission
-  const handlePlaceOrder = () => {
-    const rawIdNumber = Math.floor(8822 + Math.random() * 1000);
-    const orderId = `ORD-${rawIdNumber}`;
-    const newOrder = {
-      id: orderId,
-      items: [...cartItemsList],
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: "Preparing in Kitchen",
-      total: totalPrice
-    };
-
-    // Store in localStorage for Admin/Kitchen/POS integration
+  // Trigger order submission to database
+  const handlePlaceOrder = async () => {
+    if (!restaurant) return;
     try {
-      const storedOrdersStr = localStorage.getItem("live_orders");
-      const existingOrders = storedOrdersStr ? JSON.parse(storedOrdersStr) : [];
-      const newLiveOrder = {
-        id: orderId,
-        table: tableNumber,
-        items: cartItemsList.map(c => ({ name: c.item.name, quantity: c.quantity, price: c.item.price })),
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        status: "pending",
-        paymentType: "Unpaid",
-        customerName: "Table Guest",
-        branchId: branchId || "dhanmondi",
-        branchName: branchName || "Dhanmondi"
-      };
-      localStorage.setItem("live_orders", JSON.stringify([newLiveOrder, ...existingOrders]));
-    } catch (e) {
-      console.error("Failed to store order in localStorage", e);
-    }
+      const targetBranchId = branchId || (restaurant.branches && restaurant.branches[0]?.id) || "dhanmondi";
+      const response = await fetch("/api/tenant/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          restaurantId: restaurant.id,
+          branchId: targetBranchId,
+          table: tableNumber,
+          items: cartItemsList.map(c => ({ name: c.item.name, quantity: c.quantity, price: c.item.price })),
+          total: totalPrice
+        })
+      });
 
-    setOrders((prev) => [newOrder, ...prev]);
-    setOrderPlaced(true);
-    setCart({});
-    setIsCartExpanded(false);
-    setActiveTab("orders");
-    triggerToast(`Order placed successfully for Table #${tableNumber}!`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const newOrder = {
+          id: data.orderId,
+          items: [...cartItemsList],
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: "Pending",
+          total: totalPrice
+        };
+
+        setOrders((prev) => [newOrder, ...prev]);
+        setOrderPlaced(true);
+        setCart({});
+        setIsCartExpanded(false);
+        setActiveTab("orders");
+        triggerToast(`Order placed successfully for Table #${tableNumber}!`);
+      } else {
+        triggerToast(data.error || "Failed to place order.");
+      }
+    } catch {
+      triggerToast("Connection failed. Please try again.");
+    }
   };
 
   const leftNavItems = [
@@ -472,9 +474,43 @@ export default function RestaurantMenuPage({ params }: PageProps) {
     }
   ];
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#f0f2f5] flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-emerald-600/30 border-t-emerald-600 animate-spin" />
+          <span className="text-xs text-neutral-450 font-bold">Loading Menu...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center text-white font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium tracking-wide text-neutral-400">Loading digital menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !restaurant) {
+    return notFound();
+  }
+
+  // ── Appearance settings from DB (with safe defaults) ───────────────────
+  const primaryColor = restaurant?.primaryColor || '#059669';
+  const fontFamily   = 'ui-sans-serif, system-ui, sans-serif';
+  const layoutType   = restaurant?.layoutType   || 'grid';
+
   return (
     <EmojiProvider data={emojiData}>
-      <div className="min-h-screen bg-[#f0f2f5] flex flex-col font-sans antialiased pb-0 select-none text-neutral-800 overflow-x-hidden w-full">
+      <div
+        className="min-h-screen bg-[#f0f2f5] flex flex-col antialiased pb-0 select-none text-neutral-800 overflow-x-hidden w-full"
+        style={{ fontFamily }}
+      >
         {/* Sticky Header */}
 
 
@@ -486,7 +522,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
             <div className="max-w-6xl mx-auto relative">
               {/* Cover image wrap */}
               <div className="relative w-full h-[180px] sm:h-[220px] md:h-[260px] overflow-hidden bg-neutral-200 md:rounded-b-xl group/cover">
-                {slideshowImages.map((imgSrc, index) => {
+                {slideshowImages.map((imgSrc: string, index: number) => {
                   const isActive = index === currentSlide;
                   const isPrev = index === prevSlide;
 
@@ -518,7 +554,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                     </div>
                   );
                 })}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent z-10 pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/65 via-black/20 to-transparent z-10 pointer-events-none" />
 
                 {/* Navigation Arrows */}
                 {slideshowImages.length > 1 && (
@@ -552,7 +588,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
                     {/* Dot Indicators */}
                     <div className="absolute bottom-4 right-6 flex gap-1.5 z-20">
-                      {slideshowImages.map((_, index) => (
+                      {slideshowImages.map((_: string, index: number) => (
                         <button
                           key={index}
                           onClick={(e) => {
@@ -582,7 +618,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                   {/* Left Side: Avatar Profile Image & Text Info */}
                   <div className="flex flex-row items-end sm:items-center gap-2 sm:gap-5 text-left">
                     {/* Circular Profile Avatar (Logo) */}
-                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-white bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.15)] relative flex-shrink-0 -mt-12 sm:-mt-18 md:-mt-22">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-white bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.15)] relative shrink-0 -mt-12 sm:-mt-18 md:-mt-22">
                       <Image
                         src={restaurant.logoImage}
                         alt={`${restaurant.name} logo`}
@@ -678,20 +714,21 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
                 {/* Desktop Tabs */}
                 <div className="hidden md:flex justify-between items-center border-t border-neutral-100/80 pl-8 pr-0">
-                  <div className="flex gap-2 -mb-[1px]">
+                  <div className="flex gap-2 -mb-px">
                     <button
                       onClick={() => {
                         setActiveTab("menu");
                         setIsCartExpanded(false);
                       }}
                       className={`py-4 px-4 text-sm font-bold relative transition-colors cursor-pointer ${activeTab === "menu"
-                        ? "text-emerald-600 font-extrabold"
+                        ? "font-extrabold"
                         : "text-neutral-500 hover:text-neutral-800"
                         }`}
+                      style={activeTab === "menu" ? { color: primaryColor } : {}}
                     >
                       Menu
                       {activeTab === "menu" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full" style={{ backgroundColor: primaryColor }} />
                       )}
                     </button>
                     <button
@@ -700,13 +737,14 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                         setIsCartExpanded(false);
                       }}
                       className={`py-4 px-4 text-sm font-bold relative transition-colors cursor-pointer ${activeTab === "about"
-                        ? "text-emerald-600 font-extrabold"
+                        ? "font-extrabold"
                         : "text-neutral-500 hover:text-neutral-800"
                         }`}
+                      style={activeTab === "about" ? { color: primaryColor } : {}}
                     >
                       About
                       {activeTab === "about" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full" style={{ backgroundColor: primaryColor }} />
                       )}
                     </button>
                     <button
@@ -715,13 +753,14 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                         setIsCartExpanded(false);
                       }}
                       className={`py-4 px-4 text-sm font-bold relative transition-colors cursor-pointer ${activeTab === "reviews"
-                        ? "text-emerald-600 font-extrabold"
+                        ? "font-extrabold"
                         : "text-neutral-500 hover:text-neutral-800"
                         }`}
+                      style={activeTab === "reviews" ? { color: primaryColor } : {}}
                     >
                       Reviews
                       {activeTab === "reviews" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full" style={{ backgroundColor: primaryColor }} />
                       )}
                     </button>
                     <button
@@ -730,13 +769,14 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                         setIsCartExpanded(false);
                       }}
                       className={`py-4 px-4 text-sm font-bold relative transition-colors cursor-pointer ${activeTab === "orders"
-                        ? "text-emerald-600 font-extrabold"
+                        ? "font-extrabold"
                         : "text-neutral-500 hover:text-neutral-800"
                         }`}
+                      style={activeTab === "orders" ? { color: primaryColor } : {}}
                     >
                       Orders
                       {activeTab === "orders" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-1 bg-emerald-600 rounded-t-full" />
+                        <span className="absolute bottom-0 left-0 right-0 h-1 rounded-t-full" style={{ backgroundColor: primaryColor }} />
                       )}
                     </button>
                   </div>
@@ -792,7 +832,13 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
                   {/* Bio description info */}
                   <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed">
-                    Welcome to <strong className="text-neutral-800 font-bold">{restaurant.name}</strong> digital menu. Scan our unique QR codes directly at your table to place real-time kitchen orders instantly.
+                    {restaurant.introText ? (
+                      renderFormattedText(restaurant.introText)
+                    ) : (
+                      <>
+                        Welcome to <strong className="text-neutral-800 font-bold">{restaurant.name}</strong> digital menu. Scan our unique QR codes directly at your table to place real-time kitchen orders instantly.
+                      </>
+                    )}
                   </p>
 
                   <div className="flex flex-col gap-3.5 border-t border-neutral-100 pt-4 text-xs sm:text-sm font-semibold text-neutral-600">
@@ -804,7 +850,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                     </div>
                     <div className="flex items-center gap-3">
                       <MapPin className="w-[18px] h-[18px] text-neutral-400 shrink-0" />
-                      <span className="truncate">Located at {restaurant.location}</span>
+                      <span className="truncate">Located at {branchAddress || restaurant.location}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Clock className="w-[18px] h-[18px] text-neutral-400 shrink-0" />
@@ -820,7 +866,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
             )}
 
             {/* RIGHT SIDE CONTENT: Active Tab details (Menu list, About description, reviews feed) */}
-            <div className="flex-grow w-full flex flex-col gap-4 text-left">
+            <div className="grow w-full flex flex-col gap-4 text-left">
 
               {/* TAB CONTENT: Menu List */}
               {activeTab === "menu" && (
@@ -882,9 +928,10 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
                             className={`px-4 py-2 text-xs font-bold rounded-full border whitespace-nowrap transition-all duration-200 cursor-pointer active:scale-95 shrink-0 flex items-center gap-1.5 ${isActive
-                                ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                                ? "text-white border-transparent shadow-sm"
                                 : "bg-white text-neutral-650 hover:text-neutral-900 border-neutral-200/80 hover:bg-neutral-50"
                               }`}
+                            style={isActive ? { backgroundColor: primaryColor, borderColor: primaryColor } : {}}
                           >
                             <span className="w-4.5 h-4.5 flex items-center justify-center">
                               <Emoji name={getCategoryAppleEmojiName(cat)} className="w-full h-full object-contain" />
@@ -906,15 +953,147 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
-                      {filteredItems.map((item) => {
+                    <div className={`w-full ${
+                      layoutType === 'list'
+                        ? 'flex flex-col gap-3'
+                        : layoutType === 'compact'
+                        ? 'grid grid-cols-1 gap-2'
+                        : 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4'
+                    }`}>
+                      {filteredItems.map((item: MenuItem) => {
                         const qtyInCart = cart[item.id] || 0;
+
+                        // ──── 1. LIST LAYOUT ──────────────────────────────────────────
+                        if (layoutType === 'list') {
+                          return (
+                            <div key={item.id} className="bg-white border border-neutral-200/80 rounded-2xl p-3 shadow-xs flex gap-4 items-center hover:shadow-[0_6px_20px_rgba(0,0,0,0.025)] transition-all duration-300">
+                              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden shrink-0 bg-neutral-100 relative">
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  className="object-cover"
+                                  sizes="(max-width: 640px) 96px, 112px"
+                                />
+                                {item.popular && (
+                                  <div className="absolute top-1.5 left-1.5 bg-amber-500 text-white text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full z-10 shadow-sm">
+                                    Popular
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0 flex flex-col justify-between min-h-[96px] sm:min-h-[112px] py-0.5">
+                                <div>
+                                  <h4 className="text-sm sm:text-base font-bold text-neutral-900 line-clamp-1">{item.name}</h4>
+                                  <p className="text-[11px] sm:text-xs text-neutral-500 font-semibold leading-relaxed mt-0.5 line-clamp-2">{item.description}</p>
+                                </div>
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-sm font-black text-deep-emerald-950">${item.price.toFixed(2)}</span>
+                                  <div className="flex items-center justify-center bg-white border border-neutral-200/80 rounded-xl h-9 px-1 shadow-sm btn-bubble">
+                                    {qtyInCart > 0 ? (
+                                      <div className="flex items-center gap-1.5 px-1.5">
+                                        <button
+                                          onClick={() => removeFromCart(item.id)}
+                                          className="w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-colors text-white"
+                                          style={{ backgroundColor: `${primaryColor}22`, color: primaryColor }}
+                                        >
+                                          <Minus className="w-2 h-2" />
+                                        </button>
+                                        <span className="text-xs font-black min-w-[14px] text-center" style={{ color: primaryColor }}>
+                                          {qtyInCart}
+                                        </span>
+                                        <button
+                                          onClick={(e) => {
+                                            triggerBubbleEffect(e);
+                                            addToCart(item.id);
+                                          }}
+                                          className="w-5 h-5 rounded-full text-white flex items-center justify-center cursor-pointer transition-all duration-200"
+                                          style={{ backgroundColor: primaryColor }}
+                                        >
+                                          <Plus className="w-2.5 h-2.5 relative z-10" />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          triggerBubbleEffect(e);
+                                          addToCart(item.id);
+                                        }}
+                                        className="w-8 h-full flex items-center justify-center bg-transparent hover:scale-110 transition-all duration-200 cursor-pointer active:scale-95"
+                                        style={{ color: primaryColor }}
+                                        title="Add to Cart"
+                                      >
+                                        <Plus className="w-3.5 h-3.5 relative z-10" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // ──── 2. COMPACT LAYOUT ──────────────────────────────────────
+                        if (layoutType === 'compact') {
+                          return (
+                            <div key={item.id} className="bg-white border border-neutral-200/80 rounded-xl p-3.5 shadow-xs flex items-center justify-between hover:shadow-[0_4px_12px_rgba(0,0,0,0.015)] transition-all duration-300">
+                              <div className="flex-1 pr-4 min-w-0">
+                                <h4 className="text-sm font-bold text-neutral-800 line-clamp-1">{item.name}</h4>
+                                {item.description && (
+                                  <p className="text-[10px] sm:text-[11px] text-neutral-400 font-semibold truncate mt-0.5">{item.description}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 shrink-0">
+                                <span className="text-sm font-black text-neutral-800">${item.price.toFixed(2)}</span>
+                                <div className="flex items-center justify-center bg-white border border-neutral-200/80 rounded-lg h-8 px-1 shadow-sm btn-bubble">
+                                  {qtyInCart > 0 ? (
+                                    <div className="flex items-center gap-1.5 px-1">
+                                      <button
+                                        onClick={() => removeFromCart(item.id)}
+                                        className="w-4 h-4 rounded-full flex items-center justify-center cursor-pointer transition-colors text-white"
+                                        style={{ backgroundColor: `${primaryColor}22`, color: primaryColor }}
+                                      >
+                                        <Minus className="w-1.5 h-1.5" />
+                                      </button>
+                                      <span className="text-xs font-black min-w-[12px] text-center" style={{ color: primaryColor }}>
+                                        {qtyInCart}
+                                      </span>
+                                      <button
+                                        onClick={(e) => {
+                                          triggerBubbleEffect(e);
+                                          addToCart(item.id);
+                                        }}
+                                        className="w-4 h-4 rounded-full text-white flex items-center justify-center cursor-pointer transition-all duration-200"
+                                        style={{ backgroundColor: primaryColor }}
+                                      >
+                                        <Plus className="w-2 h-2 relative z-10" />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={(e) => {
+                                        triggerBubbleEffect(e);
+                                        addToCart(item.id);
+                                      }}
+                                      className="w-7 h-full flex items-center justify-center bg-transparent hover:scale-110 transition-all duration-200 cursor-pointer active:scale-95"
+                                      style={{ color: primaryColor }}
+                                      title="Add to Cart"
+                                    >
+                                      <Plus className="w-3 h-3 relative z-10" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // ──── 3. GRID LAYOUT (DEFAULT) ───────────────────────────────
                         return (
                           <div key={item.id} className="flex flex-col h-full group food-card">
                             {/* Card 1: Details Card (Image, Title, Description) */}
-                            <div className="flex-grow flex flex-col bg-white rounded-t-2xl rounded-br-2xl border border-neutral-200/80 border-b-0 shadow-sm hover:shadow-[0_6px_20px_rgba(0,0,0,0.025)] transition-all duration-300">
+                            <div className="grow flex flex-col bg-white rounded-t-2xl rounded-br-2xl border border-neutral-200/80 border-b-0 shadow-sm hover:shadow-[0_6px_20px_rgba(0,0,0,0.025)] transition-all duration-300">
                               {/* Food Photo Box */}
-                              <div className="relative w-full aspect-[4/3] flex-shrink-0 bg-neutral-100 overflow-hidden rounded-t-2xl">
+                              <div className="relative w-full aspect-4/3 shrink-0 bg-neutral-100 overflow-hidden rounded-t-2xl">
                                 <Image
                                   src={item.image}
                                   alt={item.name}
@@ -930,7 +1109,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                               </div>
 
                               {/* Food Info details */}
-                              <div className="flex-grow p-3.5 flex flex-col justify-between">
+                              <div className="grow p-3.5 flex flex-col justify-between">
                                 <div>
                                   <h4 className="text-sm sm:text-base font-bold text-neutral-900 truncate">
                                     {item.name}
@@ -956,14 +1135,15 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                                 {qtyInCart > 0 ? (
                                   <div className="flex items-center gap-1.5 px-2.5">
                                     <button
-                                      onClick={(e) => {
+                                      onClick={() => {
                                         removeFromCart(item.id);
                                       }}
-                                      className="w-5 h-5 rounded-full bg-deep-emerald-900/10 hover:bg-deep-emerald-900/20 text-deep-emerald-950 flex items-center justify-center cursor-pointer transition-colors"
+                                      className="w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-colors text-white"
+                                      style={{ backgroundColor: `${primaryColor}22`, color: primaryColor }}
                                     >
                                       <Minus className="w-2.5 h-2.5" />
                                     </button>
-                                    <span className="text-xs font-black text-deep-emerald-950 min-w-[14px] text-center">
+                                    <span className="text-xs font-black min-w-[14px] text-center" style={{ color: primaryColor }}>
                                       {qtyInCart}
                                     </span>
                                     <button
@@ -971,7 +1151,8 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                                         triggerBubbleEffect(e);
                                         addToCart(item.id);
                                       }}
-                                      className="w-5 h-5 rounded-full bg-deep-emerald-950 text-white hover:bg-emerald-900 flex items-center justify-center cursor-pointer transition-all duration-200"
+                                      className="w-5 h-5 rounded-full text-white flex items-center justify-center cursor-pointer transition-all duration-200"
+                                      style={{ backgroundColor: primaryColor }}
                                     >
                                       <Plus className="w-2.5 h-2.5 relative z-10" />
                                     </button>
@@ -982,7 +1163,8 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                                       triggerBubbleEffect(e);
                                       addToCart(item.id);
                                     }}
-                                    className="w-10 h-full flex items-center justify-center bg-transparent text-emerald-700 hover:text-deep-emerald-950 hover:scale-110 transition-all duration-200 cursor-pointer active:scale-95"
+                                    className="w-10 h-full flex items-center justify-center bg-transparent hover:scale-110 transition-all duration-200 cursor-pointer active:scale-95"
+                                    style={{ color: primaryColor }}
                                     title="Add to Cart"
                                   >
                                     <Plus className="w-3.5 h-3.5 relative z-10" />
@@ -1009,7 +1191,13 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                       <span>Restaurant Information</span>
                     </h3>
                     <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed">
-                      Welcome to <strong className="text-neutral-800 font-bold">{restaurant.name}</strong>, where we specialize in serving premium quality {restaurant.cuisine.toLowerCase()} options in {restaurant.location}. Our digital ordering platform enables customers to scan table QR codes to enjoy immediate kitchen preparation status tracking and side payment checkout simulations.
+                      {restaurant.descriptionText ? (
+                        renderFormattedText(restaurant.descriptionText)
+                      ) : (
+                        <>
+                          Welcome to <strong className="text-neutral-800 font-bold">{restaurant.name}</strong>, where we specialize in serving premium quality {restaurant.cuisine.toLowerCase()} options in {branchAddress || restaurant.location}. Our digital ordering platform enables customers to scan table QR codes to enjoy immediate kitchen preparation status tracking and side payment checkout simulations.
+                        </>
+                      )}
                     </p>
                   </div>
 
@@ -1019,28 +1207,32 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                       <MapPin className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                       <div className="flex flex-col text-left">
                         <span className="text-neutral-900 font-bold">Address / Location</span>
-                        <span className="text-neutral-500 mt-0.5">{restaurant.location}, House 14, Block A, Dhaka</span>
+                        <span className="text-neutral-500 mt-0.5">{branchAddress || restaurant.location}</span>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Clock className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                       <div className="flex flex-col text-left">
                         <span className="text-neutral-900 font-bold">Opening Hours</span>
-                        <span className="text-neutral-500 mt-0.5">Open Daily: 11:00 AM - 11:30 PM</span>
+                        <span className="text-neutral-500 mt-0.5">{branchHours || restaurant.operatingHours || "Open Daily: 11:00 AM - 11:00 PM"}</span>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Phone className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                       <div className="flex flex-col text-left">
                         <span className="text-neutral-900 font-bold">Phone Number</span>
-                        <a href="tel:+8801919-760626" className="text-emerald-700 font-bold hover:underline mt-0.5">+8801919-760626</a>
+                        {branchPhone ? (
+                          <a href={`tel:${branchPhone}`} className="text-emerald-700 font-bold hover:underline mt-0.5">{branchPhone}</a>
+                        ) : (
+                          <span className="text-neutral-500 mt-0.5">Not available</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Calendar className="w-4 h-4 text-neutral-400 shrink-0 mt-0.5" />
                       <div className="flex flex-col text-left">
                         <span className="text-neutral-900 font-bold">Additional Facilities</span>
-                        <span className="text-neutral-500 mt-0.5">Air Conditioned, Wifi, Table QR ordering, bKash payments accepted</span>
+                        <span className="text-neutral-500 mt-0.5">{restaurant.facilities || "Wifi, Table QR ordering"}</span>
                       </div>
                     </div>
                   </div>
@@ -1082,7 +1274,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                       ].map((row) => (
                         <div key={row.stars} className="flex items-center gap-3 w-full text-xs font-semibold text-neutral-500">
                           <span className="w-3 text-right">{row.stars}</span>
-                          <div className="flex-grow h-2 bg-neutral-100 rounded-full overflow-hidden">
+                          <div className="grow h-2 bg-neutral-100 rounded-full overflow-hidden">
                             <div className="h-full bg-amber-500 rounded-full" style={{ width: row.pct }} />
                           </div>
                           <span className="w-8 text-right">{row.pct}</span>
@@ -1102,6 +1294,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full overflow-hidden border border-neutral-250 relative bg-neutral-100">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={rev.avatar} className="object-cover w-full h-full" alt={rev.author} />
                             </div>
                             <div className="flex flex-col">
@@ -1111,7 +1304,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                           </div>
 
                           {/* Stars indicator */}
-                          <div className="flex items-center gap-0.5 text-amber-500 flex-shrink-0">
+                          <div className="flex items-center gap-0.5 text-amber-500 shrink-0">
                             {Array.from({ length: 5 }).map((_, i) => (
                               <Star
                                 key={i}
@@ -1272,7 +1465,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
         {/* Simulated Successful Checkout modal */}
         {orderPlaced && (
-          <div className="fixed inset-0 bg-deep-emerald-950/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-deep-emerald-950/70 backdrop-blur-md z-100 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full flex flex-col items-center text-center gap-6 shadow-2xl border border-neutral-100 animate-in fade-in zoom-in duration-300">
 
               {/* Green Animated Checkmark */}
@@ -1349,8 +1542,9 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                   <button
                     key={tab.id}
                     onClick={tab.onClick}
-                    className={`flex flex-col items-center justify-center gap-1 w-14 transition-all duration-200 cursor-pointer active:scale-95 ${tab.isActive ? "text-neutral-900 font-extrabold" : "text-[#b3b3b3] font-medium"
+                    className={`flex flex-col items-center justify-center gap-1 w-14 transition-all duration-200 cursor-pointer active:scale-95 ${tab.isActive ? "font-extrabold" : "text-[#b3b3b3] font-medium"
                       }`}
+                    style={tab.isActive ? { color: primaryColor } : {}}
                   >
                     <Icon className="w-5.5 h-[18px]" />
                     <span className="text-[11px] tracking-tight leading-none">{tab.label}</span>
@@ -1372,7 +1566,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
               >
                 <ShoppingBag className="w-5 h-5 text-white transition-transform group-hover:scale-105" />
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[9.5px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1a1a1a] shadow-sm animate-in zoom-in duration-200">
+                  <span className="absolute -top-1 -right-1 text-white text-[9.5px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#1a1a1a] shadow-sm animate-in zoom-in duration-200" style={{ backgroundColor: primaryColor }}>
                     {totalItems}
                   </span>
                 )}
@@ -1387,8 +1581,9 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                   <button
                     key={tab.id}
                     onClick={tab.onClick}
-                    className={`flex flex-col items-center justify-center gap-1 w-14 transition-all duration-200 cursor-pointer active:scale-95 ${tab.isActive ? "text-neutral-900 font-extrabold" : "text-[#b3b3b3] font-medium"
+                    className={`flex flex-col items-center justify-center gap-1 w-14 transition-all duration-200 cursor-pointer active:scale-95 ${tab.isActive ? "font-extrabold" : "text-[#b3b3b3] font-medium"
                       }`}
+                    style={tab.isActive ? { color: primaryColor } : {}}
                   >
                     <Icon className="w-5.5 h-[18px]" />
                     <span className="text-[11px] tracking-tight leading-none">{tab.label}</span>

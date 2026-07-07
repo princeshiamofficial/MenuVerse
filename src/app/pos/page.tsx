@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import { RESTAURANTS } from "../data/restaurants";
+import { RESTAURANTS, Branch } from "../data/restaurants";
 import { useHorizontalScroll } from "../../lib/hooks";
 import { EmojiProvider, Emoji } from "react-apple-emojis";
 import emojiData from "react-apple-emojis/src/data.json";
@@ -48,6 +48,25 @@ const getCategoryAppleEmojiName = (category: string): string => {
   return map[category.trim().toLowerCase()] || "sparkles";
 };
 
+// Menu items filtered to active restaurant (Burger Craft Lab, ID: 1)
+const menuItems = (() => {
+  const restaurant = RESTAURANTS.find(r => r.id === 1);
+  if (!restaurant) return [];
+  return restaurant.menuItems.map(item => ({
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    category: item.category,
+    image: item.image
+  }));
+})();
+
+const categories = (() => {
+  const cats = new Set<string>();
+  menuItems.forEach(item => cats.add(item.category));
+  return ["All", ...Array.from(cats)];
+})();
+
 export default function PosPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("pos");
@@ -65,9 +84,8 @@ export default function PosPage() {
   // Dynamic user roles and branch states
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
-  const [userAssignedBranchId, setUserAssignedBranchId] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
-  const [allBranches, setAllBranches] = useState<any[]>([]);
+  const [allBranches, setAllBranches] = useState<Branch[]>([]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -83,7 +101,6 @@ export default function PosPage() {
       
       setUserRole(role);
       setUserDisplayName(name);
-      setUserAssignedBranchId(branchId);
       
       if (role === "manager" && branchId) {
         setSelectedBranchId(branchId);
@@ -105,7 +122,7 @@ export default function PosPage() {
       } else {
         setAllBranches(defaults);
       }
-    } catch (e) {
+    } catch {
       setAllBranches(defaults);
     }
   }, []);
@@ -114,24 +131,7 @@ export default function PosPage() {
     router.push("/login");
   };
 
-  // Menu items filtered to active restaurant (Burger Craft Lab, ID: 1)
-  const menuItems = React.useMemo(() => {
-    const restaurant = RESTAURANTS.find(r => r.id === 1);
-    if (!restaurant) return [];
-    return restaurant.menuItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      price: item.price,
-      category: item.category,
-      image: item.image
-    }));
-  }, []);
-
-  const categories = React.useMemo(() => {
-    const cats = new Set<string>();
-    menuItems.forEach(item => cats.add(item.category));
-    return ["All", ...Array.from(cats)];
-  }, [menuItems]);
+  // Note: menuItems and categories are defined statically outside the component body
 
   const addToCart = (item: typeof menuItems[0]) => {
     setCart(prev => {
@@ -266,9 +266,9 @@ export default function PosPage() {
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ff7a00] ring-2 ring-white" />
               </button>
             </div>
-            <div className="h-8 w-[1px] bg-slate-205" />
+            <div className="h-8 w-px bg-slate-205" />
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
+              <div className="w-8 h-8 rounded-full bg-linear-to-tr from-[#ff7a00] to-amber-500 flex items-center justify-center font-bold text-xs text-white">
                 CH
               </div>
               <span className="hidden md:inline text-xs font-semibold text-slate-600">{userDisplayName}</span>
@@ -326,6 +326,7 @@ export default function PosPage() {
                   className="bg-white border border-slate-200 hover:border-[#ff7a00]/50 rounded-2xl p-3 flex flex-col gap-2.5 cursor-pointer hover:translate-y-[-2px] transition-all duration-200 select-none group shadow-sm hover:shadow-md"
                 >
                   <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-slate-50 border border-slate-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img 
                       src={item.image} 
                       alt={item.name} 

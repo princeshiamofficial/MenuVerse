@@ -63,7 +63,7 @@ export default function StatsCard({
       </div>
 
       {/* Bottom Line Gradient (Only visible on mobile) */}
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-orange-500/10 to-transparent sm:hidden" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-orange-500/10 to-transparent sm:hidden" />
     </div>
   );
 }

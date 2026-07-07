@@ -19,44 +19,7 @@ import {
 } from "lucide-react";
 
 // Explore recommendations section mock data showing popular dishes
-const RECOMMENDATION_PRODUCTS = [
-  {
-    id: 101,
-    name: "Smoked BBQ Bacon Burger",
-    category: "Burgers",
-    image: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=600&auto=format&fit=crop&q=80",
-    rating: "4.9",
-    reviews: "340",
-    price: "12.50"
-  },
-  {
-    id: 102,
-    name: "Truffle Mushroom Pizza",
-    category: "Italian",
-    image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=600&auto=format&fit=crop&q=80",
-    rating: "4.8",
-    reviews: "520",
-    price: "18.00"
-  },
-  {
-    id: 103,
-    name: "Dragon Sushi Roll Platter",
-    category: "Japanese",
-    image: "https://images.unsplash.com/photo-1611143669185-af224c5e3252?w=600&auto=format&fit=crop&q=80",
-    rating: "5.0",
-    reviews: "1.2k",
-    price: "22.50"
-  },
-  {
-    id: 104,
-    name: "Spicy Sichuan Chilli Wontons",
-    category: "Asian",
-    image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?w=600&auto=format&fit=crop&q=80",
-    rating: "4.7",
-    reviews: "180",
-    price: "11.00"
-  }
-];
+// Recommendation products mock data (unused)
 
 // Curated FAQ Questions & Answers
 const FAQ_ITEMS = [
@@ -81,10 +44,32 @@ const FAQ_ITEMS = [
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  const [customRestaurant, setCustomRestaurant] = useState<{
+    name?: string;
+    cuisine?: string;
+    location?: string;
+    image?: string;
+    logoImage?: string;
+    rating?: string;
+    reviews?: string;
+    time?: string;
+    price?: string;
+  } | null>(null);
 
-  const recommendationScrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("custom_restaurant_details");
+      if (stored) {
+        try {
+          setCustomRestaurant(JSON.parse(stored));
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, []);
+
   const restaurantScrollRef = useRef<HTMLDivElement>(null);
   const testimonialScrollRef = useRef<HTMLDivElement>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -155,31 +140,7 @@ export default function Home() {
     }
   }, [isScanning]);
 
-  const scrollRecommendations = (direction: "left" | "right") => {
-    if (recommendationScrollRef.current) {
-      const container = recommendationScrollRef.current;
-      const firstChild = container.firstElementChild as HTMLElement;
-      if (firstChild) {
-        const itemWidth = firstChild.offsetWidth;
-        const gap = parseInt(window.getComputedStyle(container).gap) || 16;
-        const scrollAmount = direction === "left" ? -(itemWidth + gap) : (itemWidth + gap);
-        container.scrollLeft += scrollAmount;
-      }
-    }
-  };
-
-  const scrollRestaurants = (direction: "left" | "right") => {
-    if (restaurantScrollRef.current) {
-      const container = restaurantScrollRef.current;
-      const firstChild = container.firstElementChild as HTMLElement;
-      if (firstChild) {
-        const itemWidth = firstChild.offsetWidth;
-        const gap = parseInt(window.getComputedStyle(container).gap) || 12;
-        const scrollAmount = direction === "left" ? -(itemWidth + gap) : (itemWidth + gap);
-        container.scrollLeft += scrollAmount;
-      }
-    }
-  };
+  // Scroll helpers (unused)
 
   const scrollTestimonials = (direction: "left" | "right") => {
     if (testimonialScrollRef.current) {
@@ -194,15 +155,36 @@ export default function Home() {
     }
   };
 
+  // Merge custom restaurant details into the RESTAURANTS list
+  const mergedRestaurants = useMemo(() => {
+    return RESTAURANTS.map((restaurant) => {
+      if (restaurant.id === 1 && customRestaurant) {
+        return {
+          ...restaurant,
+          name: customRestaurant.name || restaurant.name,
+          cuisine: customRestaurant.cuisine || restaurant.cuisine,
+          location: customRestaurant.location || restaurant.location,
+          image: customRestaurant.image || restaurant.image,
+          logoImage: customRestaurant.logoImage || restaurant.logoImage,
+          rating: customRestaurant.rating || restaurant.rating,
+          reviews: customRestaurant.reviews || restaurant.reviews,
+          time: customRestaurant.time || restaurant.time,
+          price: customRestaurant.price || restaurant.price,
+        };
+      }
+      return restaurant;
+    });
+  }, [customRestaurant]);
+
   // Handles real-time search filtering
   const filteredRestaurants = useMemo(() => {
-    return RESTAURANTS.filter((restaurant) => {
+    return mergedRestaurants.filter((restaurant) => {
       return (
         restaurant.name.toLowerCase().includes(activeSearch.toLowerCase()) ||
         restaurant.cuisine.toLowerCase().includes(activeSearch.toLowerCase())
       );
     });
-  }, [activeSearch]);
+  }, [mergedRestaurants, activeSearch]);
 
   // Infinite slide support: snap scroll position back to middle copy when out of bounds
   const handleRestaurantScroll = () => {
@@ -342,7 +324,7 @@ export default function Home() {
                     strokeWidth="2.2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="w-4 h-4 text-neutral-400 mr-2.5 flex-shrink-0"
+                    className="w-4 h-4 text-neutral-400 mr-2.5 shrink-0"
                   >
                     <circle cx="11" cy="11" r="8" />
                     <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -358,7 +340,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => setIsScanning(true)}
-                  className="bg-deep-emerald-950 hover:bg-deep-emerald-850 text-white rounded-xl w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm flex-shrink-0"
+                  className="bg-deep-emerald-950 hover:bg-deep-emerald-850 text-white rounded-xl w-[42px] h-[42px] flex items-center justify-center transition-all duration-200 active:scale-95 shadow-sm shrink-0"
                   title="Scan QR Code"
                 >
                   <svg
@@ -441,7 +423,7 @@ export default function Home() {
                     <Link
                       key={`${restaurant.id}-${idx}`}
                       href={`/${restaurant.username}`}
-                      className="flex-shrink-0 w-[calc((100%-6px)/1.5)] sm:w-[calc((100%-12px)/2.2)] md:w-[calc((100%-24px)/2.7)] snap-start flex flex-col bg-white rounded-xl border border-neutral-100/80 shadow-[0_12px_36px_rgba(0,0,0,0.03)] overflow-hidden transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.07)] hover:-translate-y-1 group cursor-pointer"
+                      className="shrink-0 w-[calc((100%-6px)/1.5)] sm:w-[calc((100%-12px)/2.2)] md:w-[calc((100%-24px)/2.7)] snap-start flex flex-col bg-white rounded-xl border border-neutral-100/80 shadow-[0_12px_36px_rgba(0,0,0,0.03)] overflow-hidden transition-all duration-300 hover:shadow-[0_24px_60px_rgba(0,0,0,0.07)] hover:-translate-y-1 group cursor-pointer"
                     >
 
                       {/* Restaurant Image Box with overlay badges */}
@@ -455,7 +437,7 @@ export default function Home() {
                               className="object-cover object-center"
                               sizes="(max-width: 640px) 67vw, (max-width: 768px) 45vw, 37vw"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
+                            <div className="absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent opacity-60" />
                           </div>
                         </div>
 
@@ -464,7 +446,7 @@ export default function Home() {
                       {/* Restaurant Info Section (Aligned exactly to screenshot) */}
                       <div className="flex items-center gap-3 p-3 bg-white border-t border-neutral-50/50">
                         {/* Left: Circular Logo Avatar */}
-                        <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 flex-shrink-0">
+                        <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 shrink-0">
                           <Image
                             src={restaurant.logoImage}
                             alt={`${restaurant.name} logo`}
@@ -488,7 +470,7 @@ export default function Home() {
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                className="w-3.5 h-3.5 text-neutral-400/90 flex-shrink-0"
+                                className="w-3.5 h-3.5 text-neutral-400/90 shrink-0"
                               >
                                 <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                                 <circle cx="12" cy="10" r="3" />
@@ -497,7 +479,7 @@ export default function Home() {
                             </div>
 
                             {/* Rating stars & number */}
-                            <div className="flex items-center gap-1 flex-shrink-0">
+                            <div className="flex items-center gap-1 shrink-0">
                               <div className="flex items-center gap-0.5">
                                 {Array.from({ length: 5 }).map((_, starIdx) => {
                                   const ratingValue = parseFloat(restaurant.rating);
@@ -599,7 +581,7 @@ export default function Home() {
               >
                 <span>See more</span>
                 <svg 
-                  className="w-3.5 h-3.5 sm:w-4 h-4" 
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4" 
                   fill="none" 
                   viewBox="0 0 24 24" 
                   stroke="currentColor"
@@ -630,7 +612,7 @@ export default function Home() {
                           className="object-cover object-center"
                           sizes="(max-width: 768px) 100vw, 33vw"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-60" />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/25 via-transparent to-transparent opacity-60" />
                       </div>
                     </div>
 
@@ -639,7 +621,7 @@ export default function Home() {
                   {/* Restaurant Info Section (Aligned exactly to screenshot) */}
                   <div className="flex items-center gap-3 p-3 bg-white border-t border-neutral-50/50">
                     {/* Left: Circular Logo Avatar */}
-                    <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 flex-shrink-0">
+                    <div className="w-11 h-11 rounded-full overflow-hidden border border-neutral-150 relative bg-neutral-100 shrink-0">
                       <Image
                         src={restaurant.logoImage}
                         alt={`${restaurant.name} logo`}
@@ -663,7 +645,7 @@ export default function Home() {
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className="w-3.5 h-3.5 text-neutral-400/90 flex-shrink-0"
+                            className="w-3.5 h-3.5 text-neutral-400/90 shrink-0"
                           >
                             <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
                             <circle cx="12" cy="10" r="3" />
@@ -672,7 +654,7 @@ export default function Home() {
                         </div>
 
                         {/* Rating stars & number */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1 shrink-0">
                           <div className="flex items-center gap-0.5">
                             {Array.from({ length: 5 }).map((_, starIdx) => {
                               const ratingValue = parseFloat(restaurant.rating);
@@ -811,7 +793,7 @@ export default function Home() {
                 {/* Bottom checklist box */}
                 <div className="w-full mt-auto bg-neutral-50/80 rounded-2xl p-4 flex flex-col gap-3 border border-neutral-100/50 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/20 transition-all duration-300">
                   <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -819,7 +801,7 @@ export default function Home() {
                     <span className="text-xs text-neutral-700 font-bold">Quick setup dashboard</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -851,7 +833,7 @@ export default function Home() {
                 {/* Bottom checklist box */}
                 <div className="w-full mt-auto bg-neutral-50/80 rounded-2xl p-4 flex flex-col gap-3 border border-neutral-100/50 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/20 transition-all duration-300">
                   <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -859,7 +841,7 @@ export default function Home() {
                     <span className="text-xs text-neutral-700 font-bold">Instant load, no app install</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -891,7 +873,7 @@ export default function Home() {
                 {/* Bottom checklist box */}
                 <div className="w-full mt-auto bg-neutral-50/80 rounded-2xl p-4 flex flex-col gap-3 border border-neutral-100/50 group-hover:bg-emerald-50/30 group-hover:border-emerald-100/20 transition-all duration-300">
                   <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -899,7 +881,7 @@ export default function Home() {
                     <span className="text-xs text-neutral-700 font-bold">Real-time status tracking</span>
                   </div>
                   <div className="flex items-center gap-2.5 text-left">
-                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                    <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -929,7 +911,7 @@ export default function Home() {
 
               {/* Feature 1: Real-time Kitchen Display */}
               <div className="flex gap-4 items-start w-full md:w-1/2 lg:w-1/3 text-left group px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 md:border-r lg:border-r border-black/15">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-rose-50/70 text-rose-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-rose-50/70 text-rose-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <Monitor className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
@@ -951,7 +933,7 @@ export default function Home() {
 
               {/* Feature 2: Digital Menu Management */}
               <div className="flex gap-4 items-start w-full md:w-1/2 lg:w-1/3 text-left group px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 md:border-r-0 lg:border-r border-black/15">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-orange-50/70 text-orange-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-orange-50/70 text-orange-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <BookOpen className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
@@ -973,7 +955,7 @@ export default function Home() {
 
               {/* Feature 3: Online Ordering System */}
               <div className="flex gap-4 items-start w-full md:w-1/2 lg:w-1/3 text-left group px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 md:border-r lg:border-r-0 border-black/15">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-emerald-50/70 text-emerald-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-emerald-50/70 text-emerald-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <ShoppingCart className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
@@ -995,7 +977,7 @@ export default function Home() {
 
               {/* Feature 4: Secure Payments (bKash) */}
               <div className="flex gap-4 items-start w-full md:w-1/2 lg:w-1/3 text-left group px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 md:border-r-0 lg:border-r border-black/15">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-pink-50/70 text-pink-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-pink-50/70 text-pink-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <CreditCard className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
@@ -1017,7 +999,7 @@ export default function Home() {
 
               {/* Feature 5: Sales Analytics */}
               <div className="flex gap-4 items-start w-full md:w-1/2 lg:w-1/3 text-left group px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 md:border-r lg:border-r border-black/15">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-50/70 text-blue-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-50/70 text-blue-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <TrendingUp className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
@@ -1039,7 +1021,7 @@ export default function Home() {
 
               {/* Feature 6: Staff Management */}
               <div className="flex gap-4 items-start w-full md:w-1/2 lg:w-1/3 text-left group px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-8 md:border-r-0 lg:border-r-0 border-black/15">
-                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-purple-50/70 text-purple-500 flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="w-12 h-12 flex items-center justify-center rounded-2xl bg-purple-50/70 text-purple-500 shrink-0 transition-transform duration-300 group-hover:scale-105">
                   <Users className="w-[22px] h-[22px]" strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
@@ -1074,7 +1056,7 @@ export default function Home() {
               </div>
 
               {/* Navigation Arrows */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => scrollTestimonials("left")}
                   className="w-10 h-10 rounded-full border border-neutral-200/80 hover:border-neutral-400 hover:bg-neutral-50 flex items-center justify-center text-neutral-600 active:scale-95 transition-all duration-250 shadow-sm"
@@ -1104,7 +1086,7 @@ export default function Home() {
               className="flex gap-6 overflow-x-auto scrollbar-none snap-x snap-mandatory pb-4 w-full px-2 sm:px-6 md:px-0"
             >
               {/* Testimonial Card 1 */}
-              <div className="flex-shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
+              <div className="shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
                 <div>
                   {/* Gold Stars */}
                   <div className="flex items-center gap-0.5 mb-2 text-amber-500">
@@ -1121,7 +1103,7 @@ export default function Home() {
                 </div>
                 {/* Author Info */}
                 <div className="flex items-center gap-2.5 mt-3 border-t border-neutral-100/80 pt-2.5">
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 flex-shrink-0">
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
                     <Image
                       src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80"
                       alt="Tasnim Rahman"
@@ -1138,7 +1120,7 @@ export default function Home() {
               </div>
 
               {/* Testimonial Card 2 */}
-              <div className="flex-shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
+              <div className="shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
                 <div>
                   {/* Gold Stars */}
                   <div className="flex items-center gap-0.5 mb-2 text-amber-500">
@@ -1155,7 +1137,7 @@ export default function Home() {
                 </div>
                 {/* Author Info */}
                 <div className="flex items-center gap-2.5 mt-3 border-t border-neutral-100/80 pt-2.5">
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 flex-shrink-0">
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
                     <Image
                       src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80"
                       alt="Zubair Siddique"
@@ -1172,7 +1154,7 @@ export default function Home() {
               </div>
 
               {/* Testimonial Card 3 */}
-              <div className="flex-shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
+              <div className="shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
                 <div>
                   {/* Gold Stars */}
                   <div className="flex items-center gap-0.5 mb-2 text-amber-500">
@@ -1189,7 +1171,7 @@ export default function Home() {
                 </div>
                 {/* Author Info */}
                 <div className="flex items-center gap-2.5 mt-3 border-t border-neutral-100/80 pt-2.5">
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 flex-shrink-0">
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
                     <Image
                       src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
                       alt="Salman Faruq"
@@ -1206,7 +1188,7 @@ export default function Home() {
               </div>
 
               {/* Testimonial Card 4 */}
-              <div className="flex-shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
+              <div className="shrink-0 w-full md:w-[calc((100%-24px)/2)] lg:w-[calc((100%-48px)/3)] snap-start flex flex-col justify-between bg-white border border-neutral-200/60 rounded-3xl p-4 sm:p-5 shadow-[0_8px_30px_rgba(0,0,0,0.01)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.04)] hover:-translate-y-1 transition-all duration-300 h-[210px]">
                 <div>
                   {/* Gold Stars */}
                   <div className="flex items-center gap-0.5 mb-2 text-amber-500">
@@ -1223,7 +1205,7 @@ export default function Home() {
                 </div>
                 {/* Author Info */}
                 <div className="flex items-center gap-2.5 mt-3 border-t border-neutral-100/80 pt-2.5">
-                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 flex-shrink-0">
+                  <div className="relative w-9 h-9 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100 shrink-0">
                     <Image
                       src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80"
                       alt="Sohail Ahmed"
@@ -1275,7 +1257,7 @@ export default function Home() {
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className={`w-4 h-4 text-neutral-450 transition-transform duration-300 flex-shrink-0 ${isOpen ? "rotate-180" : ""
+                        className={`w-4 h-4 text-neutral-450 transition-transform duration-300 shrink-0 ${isOpen ? "rotate-180" : ""
                           }`}
                       >
                         <polyline points="6 9 12 15 18 9" />
@@ -1306,7 +1288,7 @@ export default function Home() {
 
         {/* simulated QR code scanner modal */}
         {isScanning && (
-          <div className="fixed inset-0 bg-deep-emerald-950/70 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-deep-emerald-950/70 backdrop-blur-md z-100 flex items-center justify-center p-4">
             <style dangerouslySetInnerHTML={{
               __html: `
             @keyframes qrcodescan {
