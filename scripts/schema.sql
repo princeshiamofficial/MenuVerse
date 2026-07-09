@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS digital_food_menu;
-USE digital_food_menu;
+-- CREATE DATABASE IF NOT EXISTS digital_food_menu;
+-- USE digital_food_menu;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS orders;
