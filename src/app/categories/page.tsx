@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import { EmojiProvider, Emoji } from "react-apple-emojis";
@@ -147,41 +147,65 @@ export default function CategoriesPage() {
     setTimeout(() => setShowToast(null), 3000);
   };
 
-  // Mock Categories Data
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "CAT-001", name: "Burgers", description: "Flame-grilled beef, chicken and veggie burgers", itemCount: 3 },
-    { id: "CAT-002", name: "Sides", description: "French fries, onion rings and salads", itemCount: 2 },
-    { id: "CAT-003", name: "Beverages", description: "Chilled juices, sodas and mocktails", itemCount: 4 },
-    { id: "CAT-004", name: "Pizza", description: "Stone-baked Neapolitan pizza varieties", itemCount: 2 },
-    { id: "CAT-005", name: "Pasta", description: "Traditional Italian pasta dishes", itemCount: 1 },
-    { id: "CAT-006", name: "Desserts", description: "Sweet pastries, cakes and ice cream", itemCount: 2 },
-    { id: "CAT-007", name: "Sushi", description: "Freshly rolled sushi platters and rolls", itemCount: 2 },
-    { id: "CAT-008", name: "Ramen", description: "Warm bowls of authentic Japanese ramen", itemCount: 1 },
-    { id: "CAT-009", name: "Appetizers", description: "Asian appetizers and finger foods", itemCount: 1 },
-    { id: "CAT-010", name: "Mains", description: "Traditional main courses and rice dishes", itemCount: 2 }
-  ]);
+  // Categories Data
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  useEffect(() => {
+    setIsLoading(true);
+    fetch("/api/tenant/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setCategories(data);
+        }
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching categories:", err);
+        setIsLoading(false);
+      });
+  }, []);
+
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!catName) return;
 
-    const newId = `CAT-${String(categories.length + 1).padStart(3, "0")}`;
-    const newCat: Category = {
-      id: newId,
-      name: catName,
-      description: catDescription,
-      itemCount: 0,
-      emoji: catEmoji
-    };
+    try {
+      const response = await fetch("/api/tenant/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: catName,
+          description: catDescription,
+          emoji: catEmoji,
+        }),
+      });
 
-    setCategories(prev => [...prev, newCat]);
-    triggerToast(`Added category "${catName}" successfully.`);
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const newCat: Category = {
+          id: data.id,
+          name: catName,
+          description: catDescription,
+          itemCount: 0,
+          emoji: catEmoji,
+        };
 
-    // Reset Form
-    setCatName("");
-    setCatDescription("");
-    setCatEmoji("hamburger");
-    setShowAddModal(false);
+        setCategories((prev) => [newCat, ...prev]);
+        triggerToast(`Added category "${catName}" successfully.`);
+
+        // Reset Form
+        setCatName("");
+        setCatDescription("");
+        setCatEmoji("hamburger");
+        setShowAddModal(false);
+      } else {
+        triggerToast(data.error || "Failed to add category.");
+      }
+    } catch {
+      triggerToast("Connection failed.");
+    }
   };
 
   const handleStartEdit = (cat: Category) => {
@@ -192,34 +216,69 @@ export default function CategoriesPage() {
     setShowEditModal(true);
   };
 
-  const handleEditCategory = (e: React.FormEvent) => {
+  const handleEditCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingCategory || !catName) return;
 
-    setCategories(prev => prev.map(x => {
-      if (x.id === editingCategory.id) {
-        return {
-          ...x,
+    try {
+      const response = await fetch("/api/tenant/categories", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingCategory.id,
           name: catName,
           description: catDescription,
-          emoji: catEmoji
-        };
-      }
-      return x;
-    }));
+          emoji: catEmoji,
+        }),
+      });
 
-    triggerToast(`Updated category "${catName}".`);
-    setShowEditModal(false);
-    setEditingCategory(null);
-    setCatEmoji("hamburger");
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setCategories((prev) =>
+          prev.map((x) => {
+            if (x.id === editingCategory.id) {
+              return {
+                ...x,
+                name: catName,
+                description: catDescription,
+                emoji: catEmoji,
+              };
+            }
+            return x;
+          })
+        );
+
+        triggerToast(`Updated category "${catName}".`);
+        setShowEditModal(false);
+        setEditingCategory(null);
+        setCatEmoji("hamburger");
+      } else {
+        triggerToast(data.error || "Failed to update category.");
+      }
+    } catch {
+      triggerToast("Connection failed.");
+    }
   };
 
-  const handleDeleteCategory = (catId: string) => {
-    const catToDelete = categories.find(x => x.id === catId);
+  const handleDeleteCategory = async (catId: string) => {
+    const catToDelete = categories.find((x) => x.id === catId);
     if (!catToDelete) return;
-    if (confirm(`Are you sure you want to delete "${catToDelete.name}" category?`)) {
-      setCategories(prev => prev.filter(x => x.id !== catId));
-      triggerToast(`Deleted category "${catToDelete.name}".`);
+    if (confirm(`Are you sure you want to delete "${catToDelete.name}" category? This will also delete all menu items in this category!`)) {
+      try {
+        const response = await fetch(`/api/tenant/categories?id=${catId}`, {
+          method: "DELETE",
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+          setCategories((prev) => prev.filter((x) => x.id !== catId));
+          triggerToast(`Deleted category "${catToDelete.name}".`);
+        } else {
+          triggerToast(data.error || "Failed to delete category.");
+        }
+      } catch {
+        triggerToast("Connection failed.");
+      }
     }
   };
 
@@ -349,57 +408,68 @@ export default function CategoriesPage() {
 
           {/* Grid of Categories */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredCategories.map(cat => (
-              <div 
-                key={cat.id} 
-                className="bg-white border border-slate-200 hover:border-slate-350 rounded-2xl p-5 flex gap-4 transition-all duration-200 shadow-sm group"
-              >
-                {/* Category Icon Box */}
-                <div className="w-12 h-12 rounded-xl bg-orange-50 text-[#ff7a00] flex items-center justify-center shrink-0 border border-orange-100 p-2.5">
-                  <Emoji name={cat.emoji || getCategoryAppleEmojiName(cat.name)} className="w-full h-full object-contain" />
-                </div>
+            {isLoading ? (
+              <div className="col-span-full py-12 flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-[#ff7a00] animate-spin" />
+                <span className="text-xs text-slate-500 font-bold">Loading Categories...</span>
+              </div>
+            ) : filteredCategories.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-slate-400 font-medium text-xs">
+                No categories found.
+              </div>
+            ) : (
+              filteredCategories.map(cat => (
+                <div 
+                  key={cat.id} 
+                  className="bg-white border border-slate-200 hover:border-slate-350 rounded-2xl p-5 flex gap-4 transition-all duration-200 shadow-sm group"
+                >
+                  {/* Category Icon Box */}
+                  <div className="w-12 h-12 rounded-xl bg-orange-50 text-[#ff7a00] flex items-center justify-center shrink-0 border border-orange-100 p-2.5">
+                    <Emoji name={cat.emoji || getCategoryAppleEmojiName(cat.name)} className="w-full h-full object-contain" />
+                  </div>
 
-                {/* Details */}
-                <div className="flex-1 flex flex-col gap-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <h3 className="text-xs font-bold truncate text-slate-800" title={cat.name}>
-                        {cat.name}
-                      </h3>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{cat.id}</span>
+                  {/* Details */}
+                  <div className="flex-1 flex flex-col gap-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <h3 className="text-xs font-bold truncate text-slate-800" title={cat.name}>
+                          {cat.name}
+                        </h3>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{cat.id}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleStartEdit(cat)}
+                          className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                          title="Edit Category"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                     
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={() => handleStartEdit(cat)}
-                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Category"
-                      >
-                        <Edit className="w-3.5 h-3.5" />
-                      </button>
+                    <p className="text-[10.5px] text-slate-500 line-clamp-2 leading-relaxed min-h-[32px]">
+                      {cat.description || "No description provided."}
+                    </p>
 
-                      <button
-                        onClick={() => handleDeleteCategory(cat.id)}
-                        className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Category"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="mt-2 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold">
+                      <span className="text-slate-400 uppercase tracking-wide">Menu Items</span>
+                      <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-mono">{cat.itemCount} Items</span>
                     </div>
                   </div>
-                  
-                  <p className="text-[10.5px] text-slate-500 line-clamp-2 leading-relaxed min-h-[32px]">
-                    {cat.description || "No description provided."}
-                  </p>
 
-                  <div className="mt-2 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold">
-                    <span className="text-slate-400 uppercase tracking-wide">Menu Items</span>
-                    <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-mono">{cat.itemCount} Items</span>
-                  </div>
                 </div>
-
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
         </main>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
@@ -443,6 +444,7 @@ async function main() {
   await connection.query('TRUNCATE TABLE orders');
   await connection.query('TRUNCATE TABLE users');
   await connection.query('TRUNCATE TABLE menu_items');
+  await connection.query('TRUNCATE TABLE categories');
   await connection.query('TRUNCATE TABLE branch_tables');
   await connection.query('TRUNCATE TABLE branches');
   await connection.query('TRUNCATE TABLE restaurants');
@@ -459,7 +461,7 @@ async function main() {
   console.log('Inserting seed records...');
   
   for (const r of RESTAURANTS_DATA) {
-    const [resResult] = await connection.query(
+    await connection.query(
       `INSERT INTO restaurants 
        (id, name, cuisine, rating, reviews, price, time, location, logo, logo_bg, image, logo_image, username, phone, operating_hours, facilities) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -491,6 +493,36 @@ async function main() {
           }
         }
       }
+    }
+
+    // Seed Categories
+    const categoriesSet = new Set();
+    for (const m of r.menuItems) {
+      categoriesSet.add(m.category);
+    }
+    
+    for (const catName of categoriesSet) {
+      const getCategoryAppleEmojiName = (category) => {
+        const map = {
+          burgers: "hamburger",
+          sides: "french-fries",
+          beverages: "cup-with-straw",
+          pizza: "pizza",
+          pasta: "spaghetti",
+          desserts: "shortcake",
+          sushi: "sushi",
+          ramen: "steaming-bowl",
+          appetizers: "dumpling",
+          mains: "pot-of-food",
+          "rice & noodles": "curry-rice",
+        };
+        return map[category.trim().toLowerCase()] || "sparkles";
+      };
+
+      await connection.query(
+        `INSERT INTO categories (restaurant_id, name, description, emoji) VALUES (?, ?, ?, ?)`,
+        [restaurantId, catName, `${catName} menu category for ${r.name}`, getCategoryAppleEmojiName(catName)]
+      );
     }
 
     // Seed Menu Items

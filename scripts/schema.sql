@@ -5,6 +5,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS menu_items;
+DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS branch_tables;
 DROP TABLE IF EXISTS branches;
 DROP TABLE IF EXISTS restaurants;
@@ -56,6 +57,18 @@ CREATE TABLE IF NOT EXISTS branch_tables (
   location VARCHAR(255),
   status VARCHAR(50) DEFAULT 'Active',
   FOREIGN KEY (branch_id) REFERENCES branches(id) ON DELETE CASCADE
+);
+
+-- Categories for each Restaurant
+CREATE TABLE IF NOT EXISTS categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  restaurant_id INT NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  emoji VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_restaurant_category (restaurant_id, name)
 );
 
 -- Menu Items for each Restaurant

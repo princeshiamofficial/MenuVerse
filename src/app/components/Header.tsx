@@ -35,7 +35,7 @@ export default function Header() {
             </svg>
           </div>
           <span className="text-[19px] font-bold tracking-[-0.02em] text-white font-sans">
-            Stuffsus
+            MenuVerse
           </span>
         </a>
 

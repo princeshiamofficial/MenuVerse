@@ -5,7 +5,7 @@ import Image from "next/image";
 import { notFound, useSearchParams } from "next/navigation";
 import { useHorizontalScroll } from "../../lib/hooks";
 
-import { MenuItem, Restaurant, Branch } from "../data/restaurants";
+import { MenuItem, Restaurant, Branch, RESTAURANTS } from "../data/restaurants";
 import Toast from "../../../ui/toast";
 import Button from "../../../ui/button";
 import { EmojiProvider, Emoji } from "react-apple-emojis";
@@ -105,8 +105,14 @@ export default function RestaurantMenuPage({ params }: PageProps) {
   const tableNumber = searchParams.get("table") || "12";
   const branchId = searchParams.get("branch") || "";
 
-  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Find local fallback restaurant first to avoid showing loading screen
+  const localRestaurant = useMemo(() => {
+    if (!username) return null;
+    return RESTAURANTS.find((r) => r.username.toLowerCase() === username.toLowerCase()) || null;
+  }, [username]);
+
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(localRestaurant);
+  const [isLoading, setIsLoading] = useState(!localRestaurant);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -116,8 +122,10 @@ export default function RestaurantMenuPage({ params }: PageProps) {
 
   useEffect(() => {
     if (!username) return;
-    setIsLoading(true);
-    fetch(`/api/restaurants/${username}`)
+    if (!restaurant) {
+      setIsLoading(true);
+    }
+    fetch(`/api/restaurants/${username}`, { cache: "no-store" })
       .then((res) => {
         if (!res.ok) {
           throw new Error("Restaurant not found");
@@ -132,6 +140,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
         setError(err.message);
         setIsLoading(false);
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
 
@@ -313,12 +322,31 @@ export default function RestaurantMenuPage({ params }: PageProps) {
       });
   };
 
-  // Extract menu categories dynamically
+  // Extract menu categories dynamically or use persisted categories if available
   const categories = useMemo(() => {
-    if (!restaurant || !restaurant.menuItems) return ["All", "Popular"];
+    if (!restaurant) return ["All", "Popular"];
+    
+    // If restaurant has categories from DB, use them (preserving "All" and "Popular")
+    if (restaurant.categories && Array.isArray(restaurant.categories) && restaurant.categories.length > 0) {
+      return ["All", "Popular", ...restaurant.categories.map((c: { name: string }) => c.name)];
+    }
+    
+    // Fallback to dynamic extraction from menuItems
+    if (!restaurant.menuItems) return ["All", "Popular"];
     const cats = new Set<string>(restaurant.menuItems.map((item: MenuItem) => item.category as string));
     return ["All", "Popular", ...Array.from(cats)];
   }, [restaurant]);
+
+  // Resolve correct category emoji based on DB category config
+  const getCategoryEmoji = (catName: string): string => {
+    if (restaurant && restaurant.categories && Array.isArray(restaurant.categories)) {
+      const match = restaurant.categories.find((c: { name: string; emoji?: string }) => c.name.toLowerCase() === catName.toLowerCase());
+      if (match && match.emoji) {
+        return match.emoji;
+      }
+    }
+    return getCategoryAppleEmojiName(catName);
+  };
 
   // Dynamic review comments list
   const reviewsList = useMemo(() => {
@@ -474,23 +502,87 @@ export default function RestaurantMenuPage({ params }: PageProps) {
     }
   ];
 
-  if (!mounted) {
+  if (!mounted || (isLoading && !restaurant)) {
     return (
-      <div className="min-h-screen bg-[#f0f2f5] flex items-center justify-center font-sans">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-emerald-600/30 border-t-emerald-600 animate-spin" />
-          <span className="text-xs text-neutral-450 font-bold">Loading Menu...</span>
+      <div className="min-h-screen bg-[#f0f2f5] flex flex-col antialiased pb-0 select-none overflow-x-hidden w-full font-sans">
+        {/* Skeleton Sticky Header */}
+        <div className="sticky top-0 z-40 bg-white border-b border-neutral-100/80 px-4 py-3 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-neutral-200 animate-pulse" />
+            <div className="h-5 w-32 bg-neutral-200 rounded-sm animate-pulse" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-neutral-200 animate-pulse" />
+            <div className="w-8 h-8 rounded-full bg-neutral-200 animate-pulse" />
+          </div>
         </div>
-      </div>
-    );
-  }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#070b13] flex flex-col items-center justify-center text-white font-sans">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium tracking-wide text-neutral-400">Loading digital menu...</p>
+        {/* Skeleton Main Container */}
+        <div className="flex-1 w-full flex flex-col">
+          {/* Cover Photo Placeholder */}
+          <div className="w-full bg-[#f0f2f5]">
+            <div className="max-w-6xl mx-auto relative">
+              <div className="w-full h-[180px] sm:h-[220px] md:h-[260px] bg-neutral-200 md:rounded-b-xl animate-pulse" />
+
+              {/* White info area overlapping cover */}
+              <div className="bg-white rounded-t-2xl sm:rounded-t-3xl -mt-10 sm:-mt-16 md:-mt-20 pt-3 relative z-35 shadow-xs">
+                {/* Profile Details Row */}
+                <div className="px-3 sm:px-8 pb-3 flex items-center justify-between gap-5">
+                  <div className="flex flex-row items-end sm:items-center gap-2 sm:gap-5 text-left">
+                    {/* Circular Profile Avatar (Logo) */}
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-white bg-neutral-200 overflow-hidden shadow-md shrink-0 -mt-12 sm:-mt-18 md:-mt-22 animate-pulse" />
+
+                    {/* Brand details */}
+                    <div className="flex flex-col pb-1 gap-2 text-left ml-1 sm:ml-0 -mt-6 sm:mt-0">
+                      <div className="h-6 w-48 sm:w-64 bg-neutral-200 rounded-md animate-pulse" />
+                      <div className="h-4 w-32 sm:w-40 bg-neutral-200 rounded-md animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Desktop Tabs Placeholder */}
+                <div className="hidden md:flex gap-4 border-t border-neutral-100 pl-8 py-3">
+                  <div className="h-5 w-16 bg-neutral-200 rounded-md animate-pulse" />
+                  <div className="h-5 w-16 bg-neutral-200 rounded-md animate-pulse" />
+                  <div className="h-5 w-16 bg-neutral-200 rounded-md animate-pulse" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Menu Grid / Category list */}
+          <div className="max-w-6xl w-full mx-auto px-4 py-6 flex flex-col gap-6">
+            {/* Search input placeholder */}
+            <div className="w-full h-11 bg-white border border-neutral-200 rounded-xl animate-pulse" />
+
+            {/* Horizontal Categories pills placeholder */}
+            <div className="flex gap-2 overflow-hidden py-1">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-8 w-20 sm:w-24 bg-white border border-neutral-200/60 rounded-full shrink-0 animate-pulse" />
+              ))}
+            </div>
+
+            {/* Menu Items Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white border border-neutral-250/20 rounded-2xl p-3 flex flex-col gap-3 shadow-xs">
+                  {/* Image Placeholder */}
+                  <div className="w-full aspect-video bg-neutral-200 rounded-xl animate-pulse" />
+                  {/* Text details */}
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <div className="h-5 w-2/3 bg-neutral-200 rounded-md animate-pulse" />
+                    <div className="h-3 w-full bg-neutral-200 rounded-md animate-pulse" />
+                    <div className="h-3 w-4/5 bg-neutral-200 rounded-md animate-pulse" />
+                  </div>
+                  {/* Footer */}
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="h-5 w-16 bg-neutral-200 rounded-md animate-pulse" />
+                    <div className="h-8 w-20 bg-neutral-200 rounded-lg animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -934,7 +1026,7 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                             style={isActive ? { backgroundColor: primaryColor, borderColor: primaryColor } : {}}
                           >
                             <span className="w-4.5 h-4.5 flex items-center justify-center">
-                              <Emoji name={getCategoryAppleEmojiName(cat)} className="w-full h-full object-contain" />
+                              <Emoji name={getCategoryEmoji(cat)} className="w-full h-full object-contain" />
                             </span>
                             <span>{cat}</span>
                           </button>

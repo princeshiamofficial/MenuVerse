@@ -28,7 +28,8 @@ export default function LoginPage() {
           localStorage.setItem("userRole", data.user.role);
           localStorage.setItem("userDisplayName", data.user.name);
           localStorage.setItem("userAssignedBranchId", data.user.assignedBranchId || "");
-          router.replace("/dashboard");
+          const dest = (data.user.restaurantId === null || data.user.role === "system_admin") ? "/admin" : "/dashboard";
+          router.replace(dest);
         } else {
           setIsCheckingAuth(false);
         }
@@ -85,7 +86,8 @@ export default function LoginPage() {
         
         showToast("Logged in successfully! Redirecting...", "success");
         setTimeout(() => {
-          router.push("/dashboard");
+          const dest = (data.user.restaurantId === null || data.user.role === "system_admin") ? "/admin" : "/dashboard";
+          router.push(dest);
         }, 1500);
       } else {
         showToast(data.error || "Invalid credentials. Try admin@example.com with password123", "error");

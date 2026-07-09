@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import { RESTAURANTS } from "./data/restaurants";
+import { RESTAURANTS, Restaurant } from "./data/restaurants";
 import {
   ClipboardList,
   QrCode,
@@ -56,6 +56,21 @@ export default function Home() {
     time?: string;
     price?: string;
   } | null>(null);
+
+  const [dbRestaurants, setDbRestaurants] = useState<Restaurant[]>([]);
+
+  useEffect(() => {
+    fetch("/api/restaurants", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDbRestaurants(data);
+        }
+      })
+      .catch((err) => {
+        console.error("Error loading restaurants from db:", err);
+      });
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -157,7 +172,8 @@ export default function Home() {
 
   // Merge custom restaurant details into the RESTAURANTS list
   const mergedRestaurants = useMemo(() => {
-    return RESTAURANTS.map((restaurant) => {
+    const sourceList = dbRestaurants.length > 0 ? dbRestaurants : RESTAURANTS;
+    return sourceList.map((restaurant) => {
       if (restaurant.id === 1 && customRestaurant) {
         return {
           ...restaurant,
@@ -174,7 +190,7 @@ export default function Home() {
       }
       return restaurant;
     });
-  }, [customRestaurant]);
+  }, [dbRestaurants, customRestaurant]);
 
   // Handles real-time search filtering
   const filteredRestaurants = useMemo(() => {
@@ -331,7 +347,7 @@ export default function Home() {
                   </svg>
                   <input
                     type="text"
-                    placeholder="Search on Stuffsus"
+                    placeholder="Search on MenuVerse"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="bg-transparent border-none outline-none text-sm w-full text-neutral-800 placeholder-neutral-400 font-medium"

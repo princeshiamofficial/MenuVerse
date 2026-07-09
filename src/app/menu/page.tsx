@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import { RESTAURANTS } from "../data/restaurants";
+
 import ImageUploader from "../../../ui/ImageUploader";
 import { EmojiProvider, Emoji } from "react-apple-emojis";
 import emojiData from "react-apple-emojis/src/data.json";
@@ -154,27 +154,35 @@ export default function MenuPage() {
   };
 
   const [items, setItems] = useState<MenuItemWithState[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; rawId: number; name: string; emoji?: string }[]>([]);
 
   useEffect(() => {
     fetch("/api/tenant/menu")
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setItems(data.map((item: any) => ({
+          setItems(data.map((item: MenuItemWithState) => ({
             ...item,
             available: true
           })));
         }
       })
       .catch(err => console.error("Error loading menu items:", err));
+
+    fetch("/api/tenant/categories")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setCategoriesList(data);
+        }
+      })
+      .catch(err => console.error("Error loading categories:", err));
   }, []);
 
-  // Extract unique categories
+  // Map categories from categories table
   const categories = React.useMemo(() => {
-    const cats = new Set<string>();
-    items.forEach(item => cats.add(item.category));
-    return ["All", ...Array.from(cats)];
-  }, [items]);
+    return ["All", ...categoriesList.map(c => c.name)];
+  }, [categoriesList]);
 
   const triggerToast = (message: string) => {
     setShowToast(message);
@@ -224,7 +232,7 @@ export default function MenuPage() {
       } else {
         triggerToast(data.error || "Failed to update highlights.");
       }
-    } catch (err) {
+    } catch {
       triggerToast("Connection failed.");
     }
   };
@@ -267,7 +275,7 @@ export default function MenuPage() {
       } else {
         triggerToast(data.error || "Failed to add menu item.");
       }
-    } catch (err) {
+    } catch {
       triggerToast("Connection failed.");
     }
 
@@ -331,7 +339,7 @@ export default function MenuPage() {
       } else {
         triggerToast(data.error || "Failed to update menu item.");
       }
-    } catch (err) {
+    } catch {
       triggerToast("Connection failed.");
     }
 
@@ -355,13 +363,13 @@ export default function MenuPage() {
         } else {
           triggerToast(data.error || "Failed to delete item.");
         }
-      } catch (err) {
+      } catch {
         triggerToast("Connection failed.");
       }
     }
   };
 
-  const filteredItems = items.filter(item => {
+  const filteredItems: MenuItemWithState[] = items.filter(item => {
     const matchCategory = selectedCategory === "All" || item.category === selectedCategory;
     const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -477,7 +485,7 @@ export default function MenuPage() {
                   onClick={() => {
                     setMenuName("");
                     setMenuPrice(0);
-                    setMenuCategory("Burgers");
+                    setMenuCategory(categoriesList[0]?.name || "Burgers");
                     setMenuDescription("");
                     setMenuImage("");
                     setShowAddModal(true);

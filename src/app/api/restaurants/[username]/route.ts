@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getCachedTenant, setCachedTenant } from '@/lib/redis';
 
+export const dynamic = 'force-dynamic';
+
 interface RouteParams {
   params: Promise<{ username: string }>;
 }
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     console.log(`Redis Cache Miss for tenant: ${cleanUsername}. Querying MySQL...`);
 
     // 2. Query Restaurant details
-    const restaurants = await query<any[]>(
+    const restaurants = await query<Record<string, unknown>[]>(
       `SELECT * FROM restaurants WHERE username = ?`,
       [cleanUsername]
     );
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const restaurant = restaurants[0];
 
     // 3. Query Branches
-    const branches = await query<any[]>(
+    const branches = await query<Record<string, unknown>[]>(
       `SELECT * FROM branches WHERE restaurant_id = ?`,
       [restaurant.id]
     );
@@ -46,38 +48,51 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // 4. Query Tables for each branch
     const branchesWithTables = [];
     for (const b of branches) {
-      const tables = await query<any[]>(
+      const tables = await query<Record<string, unknown>[]>(
         `SELECT name, location, status FROM branch_tables WHERE branch_id = ?`,
         [b.id]
       );
       branchesWithTables.push({
-        id: b.id,
-        name: b.name,
-        location: b.location,
-        phone: b.phone,
-        operatingHours: b.operating_hours,
-        tables: tables.map((t: any) => ({
-          name: t.name,
-          location: t.location,
-          status: t.status,
+        id: b.id as string,
+        name: b.name as string,
+        location: b.location as string,
+        phone: b.phone as string,
+        operatingHours: b.operating_hours as string,
+        tables: tables.map((t: Record<string, unknown>) => ({
+          name: t.name as string,
+          location: t.location as string,
+          status: t.status as string,
         })),
       });
     }
 
     // 5. Query Menu Items
-    const menuItems = await query<any[]>(
+    const menuItems = await query<Record<string, unknown>[]>(
       `SELECT id, name, description, price, image, category, popular FROM menu_items WHERE restaurant_id = ?`,
       [restaurant.id]
     );
 
-    const formattedMenuItems = menuItems.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      price: parseFloat(item.price),
-      image: item.image,
-      category: item.category,
+    const formattedMenuItems = menuItems.map((item: Record<string, unknown>) => ({
+      id: item.id as number,
+      name: item.name as string,
+      description: item.description as string,
+      price: parseFloat(item.price as string),
+      image: item.image as string,
+      category: item.category as string,
       popular: item.popular === 1,
+    }));
+
+    // 5.5. Query Categories
+    const categories = await query<Record<string, unknown>[]>(
+      `SELECT id, name, description, emoji FROM categories WHERE restaurant_id = ? ORDER BY id ASC`,
+      [restaurant.id]
+    );
+
+    const formattedCategories = categories.map((c: Record<string, unknown>) => ({
+      id: c.id as number,
+      name: c.name as string,
+      description: (c.description as string) || '',
+      emoji: (c.emoji as string) || 'hamburger'
     }));
 
     let parsedOfferSlides = [];
@@ -93,30 +108,31 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     // 6. Structure response data matching public Restaurant format
     const fullRestaurantData = {
-      id: restaurant.id,
-      name: restaurant.name,
-      cuisine: restaurant.cuisine,
-      rating: restaurant.rating,
-      reviews: restaurant.reviews,
-      price: restaurant.price,
-      time: restaurant.time,
-      location: restaurant.location,
-      logo: restaurant.logo,
-      logoBg: restaurant.logo_bg,
-      image: restaurant.image,
-      logoImage: restaurant.logo_image,
-      username: restaurant.username,
-      phone: restaurant.phone,
-      operatingHours: restaurant.operating_hours,
-      facilities: restaurant.facilities,
-      introText: restaurant.intro_text,
-      descriptionText: restaurant.description_text,
-      primaryColor: restaurant.primary_color || '#ff7a00',
-      fontFamily: restaurant.font_family || 'Outfit',
-      layoutType: restaurant.layout_type || 'grid',
+      id: restaurant.id as number,
+      name: restaurant.name as string,
+      cuisine: restaurant.cuisine as string,
+      rating: restaurant.rating as string,
+      reviews: restaurant.reviews as string,
+      price: restaurant.price as string,
+      time: restaurant.time as string,
+      location: restaurant.location as string,
+      logo: restaurant.logo as string,
+      logoBg: restaurant.logo_bg as string,
+      image: restaurant.image as string,
+      logoImage: restaurant.logo_image as string,
+      username: restaurant.username as string,
+      phone: restaurant.phone as string,
+      operatingHours: restaurant.operating_hours as string,
+      facilities: restaurant.facilities as string,
+      introText: restaurant.intro_text as string,
+      descriptionText: restaurant.description_text as string,
+      primaryColor: (restaurant.primary_color as string) || '#ff7a00',
+      fontFamily: (restaurant.font_family as string) || 'Outfit',
+      layoutType: (restaurant.layout_type as string) || 'grid',
       offerSlides: parsedOfferSlides,
       branches: branchesWithTables,
       menuItems: formattedMenuItems,
+      categories: formattedCategories,
     };
 
 
@@ -124,7 +140,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     await setCachedTenant(cleanUsername, fullRestaurantData, 3600);
 
     return NextResponse.json(fullRestaurantData);
-  } catch (err: any) {
+  } catch (err) {
     console.error('Public restaurant GET error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

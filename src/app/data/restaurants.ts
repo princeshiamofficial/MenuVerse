@@ -33,6 +33,7 @@ export interface Restaurant {
   username: string;
   menuItems: MenuItem[];
   branches?: Branch[];
+  categories?: any[];
   phone?: string;
   operatingHours?: string;
   facilities?: string;

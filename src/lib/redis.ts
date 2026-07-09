@@ -45,6 +45,13 @@ async function getRedisClient(): Promise<RedisClientType | null> {
       ),
     ]);
 
+    // Disable write protection on bgsave errors to avoid MISCONF blockage
+    try {
+      await client.sendCommand(['CONFIG', 'SET', 'stop-writes-on-bgsave-error', 'no']);
+    } catch (configErr) {
+      console.warn('Could not disable Redis stop-writes-on-bgsave-error:', configErr);
+    }
+
     redisClient = client as RedisClientType;
     globalRef.redisClient = redisClient;
     console.log('Redis connected successfully.');

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { verifyToken } from './lib/auth';
 
 const PROTECTED_ROUTES = [
+  '/admin',
   '/dashboard',
   '/pos',
   '/orders',
@@ -42,6 +43,23 @@ export async function proxy(req: NextRequest) {
       return response;
     }
 
+    const isSystemAdmin = payload.restaurantId === null || payload.role === 'system_admin';
+
+    // Route checks for system admin panel /admin
+    if (pathname === '/admin' || pathname.startsWith('/admin/')) {
+      if (!isSystemAdmin) {
+        // Non-system-admins go back to dashboard
+        return NextResponse.redirect(new URL('/dashboard', req.url));
+      }
+      return NextResponse.next();
+    }
+
+    // System admins should only be allowed on the system admin pages.
+    // If they access other protected routes, redirect to /admin.
+    if (isSystemAdmin) {
+      return NextResponse.redirect(new URL('/admin', req.url));
+    }
+
     // Role-based authorization check (Managers can't access Admin-only pages)
     const adminOnlyRoutes = ['/branches', '/profile', '/appearance', '/staff', '/settings'];
     const isAdminOnly = adminOnlyRoutes.some(route => 
@@ -60,7 +78,8 @@ export async function proxy(req: NextRequest) {
   if (pathname === '/login' && token) {
     const payload = await verifyToken(token);
     if (payload) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
+      const destination = (payload.restaurantId === null || payload.role === 'system_admin') ? '/admin' : '/dashboard';
+      return NextResponse.redirect(new URL(destination, req.url));
     }
   }
 
