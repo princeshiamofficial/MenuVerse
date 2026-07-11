@@ -35,7 +35,7 @@ export default function QrCodesPage() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("Saved successfully!");
-  const [origin, setOrigin] = useState("http://localhost:3000");
+  const [origin, setOrigin] = useState("");
   const [previewQr, setPreviewQr] = useState<{ name: string; location: string; url: string } | null>(null);
 
   // Dynamic user roles and branch states
