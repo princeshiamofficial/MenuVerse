@@ -9,19 +9,6 @@ interface BeautifulQRCodeProps {
   size?: number;
 }
 
-/**
- * Returns the minimum QR typeNumber that fits the given URL under Level M.
- * Falls back to 0 (auto) if the URL is longer than Version 6 capacity.
- * Version 4 = 78 bytes, Version 5 = 106 bytes, Version 6 = 134 bytes (Level M, binary mode).
- */
-function getTypeNumber(url: string): number {
-  const bytes = new TextEncoder().encode(url).length;
-  if (bytes <= 78) return 4;
-  if (bytes <= 106) return 5;
-  if (bytes <= 134) return 6;
-  return 0; // auto — let the library choose
-}
-
 export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 }: BeautifulQRCodeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [QRCodeStyling, setQRCodeStyling] = useState<any>(null);
@@ -42,13 +29,13 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
       margin: Math.round(size * 0.065),
       type: "svg",
       data: value,
-      // No image property — no version bump from embedded image
+      // No image — avoids version bump from embedded center image
       dotsOptions: {
         color: "#000000",
         type: "dots"
       },
       qrOptions: {
-        typeNumber: getTypeNumber(value),
+        typeNumber: 0, // Auto — library selects minimum safe version
         mode: "Byte",
         errorCorrectionLevel: "M"
       },
@@ -69,7 +56,6 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
     qrCode.append(ref.current);
   }, [QRCodeStyling, value, tableName, logoUrl, size]);
 
-  // Center badge label: table number or nothing
   const centerLabel = tableName ? tableName.replace("Table ", "") : null;
   const badgeSize = Math.round(size * 0.22);
   const fontSize = badgeSize > 30 ? Math.round(badgeSize * 0.55) : Math.round(badgeSize * 0.6);

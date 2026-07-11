@@ -302,9 +302,6 @@ export default function BranchesPage() {
       const SIZE = 1000;
       const MARGIN = 65;
 
-      const urlBytes = new TextEncoder().encode(targetUrl).length;
-      const typeNumber = urlBytes <= 78 ? 4 : urlBytes <= 106 ? 5 : urlBytes <= 134 ? 6 : 0;
-
       const qrCode = new Creator({
         width: SIZE,
         height: SIZE,
@@ -316,7 +313,7 @@ export default function BranchesPage() {
           type: "dots"
         },
         qrOptions: {
-          typeNumber: typeNumber,
+          typeNumber: 0, // Auto — library selects minimum safe version
           mode: "Byte",
           errorCorrectionLevel: "M"
         },

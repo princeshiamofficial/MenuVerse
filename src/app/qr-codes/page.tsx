@@ -194,23 +194,19 @@ export default function QrCodesPage() {
       const SIZE = 1000;
       const MARGIN = 65;
 
-      // Pick minimum version that fits the URL under Level M (no image bump)
-      const urlBytes = new TextEncoder().encode(targetUrl).length;
-      const typeNumber = urlBytes <= 78 ? 4 : urlBytes <= 106 ? 5 : urlBytes <= 134 ? 6 : 0;
-
       const qrCode = new Creator({
         width: SIZE,
         height: SIZE,
         margin: MARGIN,
         type: "svg",
         data: targetUrl,
-        // No image — keeps typeNumber:4 valid (no version bump)
+        // No image — prevents version bump from embedded center image
         dotsOptions: {
           color: "#000000",
           type: "dots"
         },
         qrOptions: {
-          typeNumber: typeNumber,
+          typeNumber: 0, // Auto — library selects minimum safe version
           mode: "Byte",
           errorCorrectionLevel: "M"
         },
