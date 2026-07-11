@@ -320,7 +320,7 @@ export default function BranchesPage() {
           type: "dots"
         },
         qrOptions: {
-          typeNumber: 6,
+          typeNumber: 0,
           mode: "Byte",
           errorCorrectionLevel: "H"
         },

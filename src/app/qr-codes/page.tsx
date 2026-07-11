@@ -212,7 +212,7 @@ export default function QrCodesPage() {
           type: "dots"
         },
         qrOptions: {
-          typeNumber: 6,
+          typeNumber: 0,
           mode: "Byte",
           errorCorrectionLevel: "H"
         },
