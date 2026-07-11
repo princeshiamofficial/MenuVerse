@@ -55,7 +55,7 @@ export default function BranchesPage() {
   const [branchFormTablesCount, setBranchFormTablesCount] = useState(2);
 
   // Table QR Code states (scoped to selected branch card)
-  const [restaurantUsername, setRestaurantUsername] = useState("burgercraftlab");
+  const [restaurantUsername, setRestaurantUsername] = useState("");
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrModalMode, setQrModalMode] = useState<"add" | "edit">("add");

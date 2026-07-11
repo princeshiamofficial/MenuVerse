@@ -41,9 +41,8 @@ export default function QrCodesPage() {
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
 
-  const [restaurantUsername, setRestaurantUsername] = useState("burgercraftlab");
-
   // Branch and Table states
+  const [restaurantUsername, setRestaurantUsername] = useState("");
   const [branches, setBranches] = useState<CustomBranch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -77,17 +76,17 @@ export default function QrCodesPage() {
         setSelectedBranchId("dhanmondi");
       }
 
-      // Fetch restaurant details to get the correct username and branches
+      // Load restaurant details to get correct username and branches
       fetch("/api/tenant/restaurant-details")
         .then(res => res.json())
         .then(data => {
           if (data && data.username) {
             setRestaurantUsername(data.username);
             
-            // Load branches for this specific restaurant from fallback or db
-            const restaurant = RESTAURANTS.find(r => r.id === data.id);
+            // Load branches
+            const restaurant = RESTAURANTS.find(r => r.id === data.id || r.username === data.username);
             const defaults = restaurant?.branches || [];
-            const storedBranchesStr = localStorage.getItem(`restaurant_branches_${data.id}`);
+            const storedBranchesStr = localStorage.getItem("restaurant_branches");
             if (storedBranchesStr) {
               try {
                 setBranches([...defaults, ...JSON.parse(storedBranchesStr)]);
