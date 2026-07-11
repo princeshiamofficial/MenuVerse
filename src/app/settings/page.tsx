@@ -359,7 +359,7 @@ export default function SettingsPage() {
         qrOptions: {
           typeNumber: 0, // Auto — library selects minimum safe version
           mode: "Byte",
-          errorCorrectionLevel: "L"
+          errorCorrectionLevel: "M"
         },
         backgroundOptions: {
           color: "#ffffff",
@@ -371,8 +371,24 @@ export default function SettingsPage() {
         cornersDotOptions: {
           color: "#000000",
           type: "dot"
-        }
-      });
+        },
+        extensions: [
+          (svg: any) => {
+            const clipPaths = svg.querySelectorAll("clipPath");
+            clipPaths.forEach((clipPath: any) => {
+              if (clipPath.id && clipPath.id.includes("clip-path-dot-color")) {
+                const circles = clipPath.querySelectorAll("circle");
+                circles.forEach((circle: any) => {
+                  const r = parseFloat(circle.getAttribute("r") || "0");
+                  if (r > 0) {
+                    circle.setAttribute("r", String(r * 0.5));
+                  }
+                });
+              }
+            });
+          }
+        ]
+      } as any);
 
       qrCode.getRawData("svg").then((blob) => {
         if (!blob || !(blob instanceof Blob)) return;
