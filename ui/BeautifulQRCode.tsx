@@ -58,7 +58,7 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
         type: "dots"
       },
       qrOptions: {
-        typeNumber: 4,
+        typeNumber: 0,
         mode: "Byte",
         errorCorrectionLevel: "M"
       },
