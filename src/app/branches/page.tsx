@@ -308,7 +308,8 @@ export default function BranchesPage() {
       `;
       const imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
 
-      const qrCode = new mod.default({
+      const Creator = mod.default || mod;
+      const qrCode = new Creator({
         width: 1000,
         height: 1000,
         type: "svg",

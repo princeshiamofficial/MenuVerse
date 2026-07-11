@@ -45,7 +45,8 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
     }
 
     // 2. Initialize QRCodeStyling
-    const qrCode = new QRCodeStyling.default({
+    const Creator = QRCodeStyling.default || QRCodeStyling;
+    const qrCode = new Creator({
       width: size,
       height: size,
       type: "svg",
