@@ -196,37 +196,50 @@ async function main() {
       );
     }
 
-    // 2. Create the Admin User (assigned to Burger Craft Lab)
-    const email = 'admin@example.com';
+    // 2. Create Admin Users for all restaurants
     const password = 'password123';
     const hashedPassword = await hashPassword(password);
 
-    console.log(`Creating Admin User: ${email} ...`);
-    await connection.query(
-      `INSERT INTO users (restaurant_id, name, email, password_hash, role, assigned_branch_id, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE email=email`,
-      [
-        burgerCraftLabId,
-        'System Admin',
-        email,
-        hashedPassword,
-        'admin',
-        null,
-        'Active'
-      ]
-    );
+    // Fetch all inserted restaurants to get their IDs and usernames
+    const [insertedRestaurants] = await connection.query('SELECT id, name, username FROM restaurants');
 
-    console.log(`\n✅ Default admin user and 5 restaurants created!`);
+    console.log('\nCreating Admin Users for all restaurants...');
+    for (const r of insertedRestaurants) {
+      let email;
+      if (r.username === 'burgercraftlab') {
+        email = 'admin@example.com';
+      } else if (r.username === 'sakurasushibar') {
+        email = 'sakura@example.com';
+      } else {
+        email = `${r.username}@example.com`;
+      }
+
+      await connection.query(
+        `INSERT INTO users (restaurant_id, name, email, password_hash, role, assigned_branch_id, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE restaurant_id=VALUES(restaurant_id), password_hash=VALUES(password_hash)`,
+        [
+          r.id,
+          `${r.name} Admin`,
+          email,
+          hashedPassword,
+          'admin',
+          null,
+          'Active'
+        ]
+      );
+      console.log(`- Created admin: ${email} (for ${r.name})`);
+    }
+
+    console.log(`\n✅ Admin users successfully created for all restaurants!`);
     console.log(`-----------------------------------------------`);
-    console.log(`Login Email:    ${email}`);
-    console.log(`Login Password: ${password}`);
-    console.log(`URLs:`);
-    console.log(`  - https://menuversebd.com/burgercraftlab`);
-    console.log(`  - https://menuversebd.com/sakurasushibar`);
-    console.log(`  - https://menuversebd.com/ladolcevita`);
-    console.log(`  - https://menuversebd.com/spicywok`);
-    console.log(`  - https://menuversebd.com/redchili`);
+    console.log(`Password for all accounts: ${password}`);
+    console.log(`Logins:`);
+    console.log(`  - admin@example.com (Burger Craft Lab)`);
+    console.log(`  - sakura@example.com (Sakura Sushi Bar)`);
+    console.log(`  - ladolcevita@example.com (La Dolce Vita)`);
+    console.log(`  - spicywok@example.com (The Spicy Wok)`);
+    console.log(`  - redchili@example.com (Red Chili)`);
     console.log(`-----------------------------------------------`);
 
   } catch (err) {
