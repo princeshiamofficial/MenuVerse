@@ -189,16 +189,7 @@ export default function QrCodesPage() {
 
   const downloadQrWithTableNo = (tableName: string, targetUrl: string) => {
     import("qr-code-styling").then((mod) => {
-      const cleanNum = tableName.replace("Table ", "");
-      const svgString = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="#ff7a00" stroke-width="6" />
-          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#0f172a" text-anchor="middle" dominant-baseline="central">
-            ${cleanNum}
-          </text>
-        </svg>
-      `;
-      const imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
+      const imageSrc = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Chrome_dino.png";
 
       const Creator = mod.default || mod;
       const qrCode = new Creator({
@@ -208,23 +199,23 @@ export default function QrCodesPage() {
         data: targetUrl,
         image: imageSrc,
         dotsOptions: {
-          color: "#0f172a",
-          type: "rounded"
+          color: "#000000",
+          type: "dots"
         },
         backgroundOptions: {
           color: "#ffffff",
         },
         imageOptions: {
           crossOrigin: "anonymous",
-          margin: 5,
-          imageSize: 0.4
+          margin: 2,
+          imageSize: 0.2
         },
         cornersSquareOptions: {
-          color: "#0f172a",
+          color: "#000000",
           type: "extra-rounded"
         },
         cornersDotOptions: {
-          color: "#0f172a",
+          color: "#000000",
           type: "dot"
         }
       });

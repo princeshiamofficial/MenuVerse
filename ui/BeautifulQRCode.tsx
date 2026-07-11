@@ -23,26 +23,8 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
   useEffect(() => {
     if (!QRCodeStyling || !ref.current) return;
 
-    // 1. Generate center image
-    let imageSrc = "";
-    if (tableName) {
-      const cleanNum = tableName.replace("Table ", "");
-      // Generate a beautiful SVG representing the table number
-      const svgString = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="#ff7a00" stroke-width="6" />
-          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#0f172a" text-anchor="middle" dominant-baseline="central">
-            ${cleanNum}
-          </text>
-        </svg>
-      `;
-      imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
-    } else if (logoUrl) {
-      imageSrc = logoUrl;
-    } else {
-      // Fallback to the beautiful Chrome-like Dino logo silhouette if nothing is provided
-      imageSrc = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Chrome_dino.png";
-    }
+    // Use Chrome Dino silhouette in the center to look exactly like Chrome's QR code
+    const imageSrc = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Chrome_dino.png";
 
     // 2. Initialize QRCodeStyling
     const Creator = QRCodeStyling.default || QRCodeStyling;
@@ -53,24 +35,24 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
       data: value,
       image: imageSrc,
       dotsOptions: {
-        color: "#0f172a",
-        type: "rounded"
+        color: "#000000",
+        type: "dots" // Circular dots!
       },
       backgroundOptions: {
         color: "#ffffff",
       },
       imageOptions: {
         crossOrigin: "anonymous",
-        margin: 5,
-        imageSize: 0.4
+        margin: 2,
+        imageSize: 0.2
       },
       cornersSquareOptions: {
-        color: "#0f172a",
-        type: "extra-rounded"
+        color: "#000000",
+        type: "extra-rounded" // Rounded square corner finders
       },
       cornersDotOptions: {
-        color: "#0f172a",
-        type: "dot"
+        color: "#000000",
+        type: "dot" // Inner finder dots
       }
     });
 
