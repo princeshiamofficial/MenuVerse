@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     if (user.role === 'manager' && user.assignedBranchId) {
       orders = await query<any[]>(
         `SELECT o.id, o.restaurant_id as restaurantId, o.branch_id as branchId, 
-                o.table_name as table, o.items, o.status, o.total, o.created_at as time,
+                o.table_name as \`table\`, o.items, o.status, o.total, o.created_at as time,
                 b.name as branchName
          FROM orders o
          JOIN branches b ON o.branch_id = b.id
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     } else {
       orders = await query<any[]>(
         `SELECT o.id, o.restaurant_id as restaurantId, o.branch_id as branchId, 
-                o.table_name as table, o.items, o.status, o.total, o.created_at as time,
+                o.table_name as \`table\`, o.items, o.status, o.total, o.created_at as time,
                 b.name as branchName
          FROM orders o
          JOIN branches b ON o.branch_id = b.id
