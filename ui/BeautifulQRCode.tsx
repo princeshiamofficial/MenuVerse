@@ -14,7 +14,6 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
   const [QRCodeStyling, setQRCodeStyling] = useState<any>(null);
 
   useEffect(() => {
-    // Dynamic import to avoid SSR errors
     import("qr-code-styling").then((mod) => {
       setQRCodeStyling(() => mod);
     });
@@ -23,52 +22,25 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
   useEffect(() => {
     if (!QRCodeStyling || !ref.current) return;
 
-    // 1. Generate center image
-    let imageSrc = "";
-    if (tableName) {
-      const cleanNum = tableName.replace("Table ", "");
-      // Generate a beautiful SVG representing the table number
-      const svgString = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-          <circle cx="50" cy="50" r="48" fill="#ffffff" />
-          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="46" fill="#000000" text-anchor="middle" dominant-baseline="central">
-            ${cleanNum}
-          </text>
-        </svg>
-      `;
-      imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
-    } else if (logoUrl) {
-      imageSrc = logoUrl;
-    } else {
-      // Fallback to the beautiful Chrome-like Dino logo silhouette if nothing is provided
-      imageSrc = "https://upload.wikimedia.org/wikipedia/commons/e/ea/Chrome_dino.png";
-    }
-
-    // 2. Initialize QRCodeStyling
     const Creator = QRCodeStyling.default || QRCodeStyling;
     const qrCode = new Creator({
       width: size,
       height: size,
-      margin: 10,
+      margin: Math.round(size * 0.065),
       type: "svg",
       data: value,
-      image: imageSrc,
+      // No image property — avoids version bump, allows typeNumber:4
       dotsOptions: {
         color: "#000000",
         type: "dots"
       },
       qrOptions: {
-        typeNumber: 0,
+        typeNumber: 4,
         mode: "Byte",
         errorCorrectionLevel: "M"
       },
       backgroundOptions: {
         color: "#ffffff",
-      },
-      imageOptions: {
-        crossOrigin: "anonymous",
-        margin: 2,
-        imageSize: 0.22
       },
       cornersSquareOptions: {
         color: "#000000",
@@ -84,5 +56,36 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
     qrCode.append(ref.current);
   }, [QRCodeStyling, value, tableName, logoUrl, size]);
 
-  return <div ref={ref} className="flex items-center justify-center select-none" />;
+  // Center badge label: table number or nothing
+  const centerLabel = tableName ? tableName.replace("Table ", "") : null;
+  const badgeSize = Math.round(size * 0.22);
+  const fontSize = badgeSize > 30 ? Math.round(badgeSize * 0.55) : Math.round(badgeSize * 0.6);
+
+  return (
+    <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+      <div ref={ref} className="flex items-center justify-center select-none" />
+      {centerLabel && (
+        <div
+          style={{
+            position: "absolute",
+            width: badgeSize,
+            height: badgeSize,
+            borderRadius: "50%",
+            background: "#ffffff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            fontWeight: 900,
+            fontSize: fontSize,
+            color: "#000000",
+            pointerEvents: "none",
+            userSelect: "none",
+          }}
+        >
+          {centerLabel}
+        </div>
+      )}
+    </div>
+  );
 }

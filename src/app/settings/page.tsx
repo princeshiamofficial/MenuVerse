@@ -342,40 +342,27 @@ export default function SettingsPage() {
   const downloadQrWithTableNo = (tableName: string, targetUrl: string) => {
     import("qr-code-styling").then((mod) => {
       const cleanNum = tableName.replace("Table ", "");
-      const svgString = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-          <circle cx="50" cy="50" r="48" fill="#ffffff" />
-          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="46" fill="#000000" text-anchor="middle" dominant-baseline="central">
-            ${cleanNum}
-          </text>
-        </svg>
-      `;
-      const imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
-
       const Creator = mod.default || mod;
+      const SIZE = 1000;
+      const MARGIN = 65;
+
       const qrCode = new Creator({
-        width: 1000,
-        height: 1000,
-        margin: 40,
+        width: SIZE,
+        height: SIZE,
+        margin: MARGIN,
         type: "svg",
         data: targetUrl,
-        image: imageSrc,
         dotsOptions: {
           color: "#000000",
           type: "dots"
         },
         qrOptions: {
-          typeNumber: 0,
+          typeNumber: 4,
           mode: "Byte",
           errorCorrectionLevel: "M"
         },
         backgroundOptions: {
           color: "#ffffff",
-        },
-        imageOptions: {
-          crossOrigin: "anonymous",
-          margin: 10,
-          imageSize: 0.22
         },
         cornersSquareOptions: {
           color: "#000000",
@@ -387,12 +374,50 @@ export default function SettingsPage() {
         }
       });
 
-      qrCode.download({
-        name: `${tableName.replace(" ", "_")}_QR`,
-        extension: "png"
+      qrCode.getRawData("svg").then((blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = SIZE;
+          canvas.height = SIZE;
+          const ctx = canvas.getContext("2d")!;
+
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, SIZE, SIZE);
+          ctx.drawImage(img, 0, 0, SIZE, SIZE);
+          URL.revokeObjectURL(url);
+
+          const badgeR = Math.round(SIZE * 0.11);
+          const cx = SIZE / 2;
+          const cy = SIZE / 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, badgeR, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
+
+          const fontSize = Math.round(badgeR * 1.1);
+          ctx.fillStyle = "#000000";
+          ctx.font = `900 ${fontSize}px system-ui, -apple-system, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(cleanNum, cx, cy);
+
+          canvas.toBlob((pngBlob) => {
+            if (!pngBlob) return;
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(pngBlob);
+            a.download = `${tableName.replace(" ", "_")}_QR.png`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }, "image/png");
+        };
+        img.src = url;
       });
     });
   };
+
+
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex text-slate-800 font-sans overflow-hidden">
