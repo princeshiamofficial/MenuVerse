@@ -57,50 +57,146 @@ async function main() {
   });
 
   try {
-    // 1. Create a default Restaurant first so the admin has a tenant
-    console.log('Creating default Sakura Sushi Bar restaurant...');
-    const [restaurantResult] = await connection.query(
-      `INSERT INTO restaurants (name, cuisine, rating, reviews, price, time, location, logo, logo_bg, username, primary_color, font_family, layout_type)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)`,
-      [
-        'Sakura Sushi Bar',
-        'Japanese & Sushi',
-        '4.8',
-        '120',
-        '$$$',
-        '20-30 min',
-        'Banani, Dhaka',
-        'S',
-        'from-pink-500 to-rose-600',
-        'sakurasushibar',
-        '#e11d48',
-        'Outfit',
-        'grid'
-      ]
-    );
+    // 1. Create all 5 default Restaurants so all public URLs work
+    const restaurantsData = [
+      {
+        name: 'Burger Craft Lab',
+        cuisine: 'Gourmet Burgers',
+        rating: '4.9',
+        reviews: '340',
+        price: '$$',
+        time: '15-25 min',
+        location: 'Dhanmondi, Dhaka',
+        logo: 'B',
+        logo_bg: 'from-amber-500 to-orange-600',
+        username: 'burgercraftlab',
+        primary_color: '#ff7a00',
+        font_family: 'Outfit',
+        layout_type: 'grid',
+        branch: {
+          id: 'dhanmondi-branch',
+          name: 'Dhanmondi Branch',
+          location: 'Dhanmondi, Dhaka',
+          phone: '+8801919-760626',
+          operating_hours: 'Open Daily: 11:00 AM - 11:30 PM'
+        }
+      },
+      {
+        name: 'La Dolce Vita',
+        cuisine: 'Italian & Pizza',
+        rating: '4.7',
+        reviews: '180',
+        price: '$$$',
+        time: '25-35 min',
+        location: 'Gulshan, Dhaka',
+        logo: 'L',
+        logo_bg: 'from-emerald-500 to-teal-600',
+        username: 'ladolcevita',
+        primary_color: '#10b981',
+        font_family: 'Outfit',
+        layout_type: 'grid',
+        branch: {
+          id: 'gulshan-branch',
+          name: 'Gulshan Branch',
+          location: 'Gulshan, Dhaka',
+          phone: '+8801700000001',
+          operating_hours: 'Open Daily: 12:00 PM - 11:00 PM'
+        }
+      },
+      {
+        name: 'Sakura Sushi Bar',
+        cuisine: 'Japanese & Sushi',
+        rating: '4.8',
+        reviews: '120',
+        price: '$$$',
+        time: '20-30 min',
+        location: 'Banani, Dhaka',
+        logo: 'S',
+        logo_bg: 'from-pink-500 to-rose-600',
+        username: 'sakurasushibar',
+        primary_color: '#e11d48',
+        font_family: 'Outfit',
+        layout_type: 'grid',
+        branch: {
+          id: 'banani-branch',
+          name: 'Banani Main Branch',
+          location: 'Road 11, Banani, Dhaka',
+          phone: '+8801700000000',
+          operating_hours: 'Open Daily: 12:00 PM - 10:30 PM'
+        }
+      },
+      {
+        name: 'The Spicy Wok',
+        cuisine: 'Pan-Asian & Bowls',
+        rating: '4.6',
+        reviews: '95',
+        price: '$$',
+        time: '15-20 min',
+        location: 'Uttara, Dhaka',
+        logo: 'W',
+        logo_bg: 'from-red-500 to-orange-600',
+        username: 'spicywok',
+        primary_color: '#ef4444',
+        font_family: 'Outfit',
+        layout_type: 'grid',
+        branch: {
+          id: 'uttara-branch',
+          name: 'Uttara Branch',
+          location: 'Uttara, Dhaka',
+          phone: '+8801700000002',
+          operating_hours: 'Open Daily: 11:30 AM - 10:00 PM'
+        }
+      },
+      {
+        name: 'Red Chili',
+        cuisine: 'Chinese & Hotpot',
+        rating: '4.5',
+        reviews: '75',
+        price: '$$',
+        time: '20-30 min',
+        location: 'Mirpur, Dhaka',
+        logo: 'R',
+        logo_bg: 'from-red-600 to-rose-700',
+        username: 'redchili',
+        primary_color: '#dc2626',
+        font_family: 'Outfit',
+        layout_type: 'grid',
+        branch: {
+          id: 'mirpur-branch',
+          name: 'Mirpur Branch',
+          location: 'Mirpur, Dhaka',
+          phone: '+8801700000003',
+          operating_hours: 'Open Daily: 11:30 AM - 10:30 PM'
+        }
+      }
+    ];
 
-    const restaurantId = restaurantResult.insertId;
-    console.log(`- Restaurant created/verified with ID: ${restaurantId}`);
+    let burgerCraftLabId = 1;
 
-    // Create a default branch
-    console.log('Creating default branch...');
-    await connection.query(
-      `INSERT INTO branches (id, restaurant_id, name, location, phone, operating_hours)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE id=id`,
-      [
-        'banani-branch',
-        restaurantId,
-        'Banani Main Branch',
-        'Road 11, Banani, Dhaka',
-        '+8801700000000',
-        'Open Daily: 12:00 PM - 10:30 PM'
-      ]
-    );
-    console.log('- Default branch created/verified.');
+    for (const r of restaurantsData) {
+      console.log(`Creating/Verifying restaurant: ${r.name}...`);
+      const [res] = await connection.query(
+        `INSERT INTO restaurants (name, cuisine, rating, reviews, price, time, location, logo, logo_bg, username, primary_color, font_family, layout_type)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)`,
+        [r.name, r.cuisine, r.rating, r.reviews, r.price, r.time, r.location, r.logo, r.logo_bg, r.username, r.primary_color, r.font_family, r.layout_type]
+      );
+      
+      const rId = res.insertId || 1;
+      if (r.username === 'burgercraftlab') {
+        burgerCraftLabId = rId;
+      }
 
-    // 2. Create the Admin User
+      // Create branch
+      await connection.query(
+        `INSERT INTO branches (id, restaurant_id, name, location, phone, operating_hours)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE id=id`,
+        [r.branch.id, rId, r.branch.name, r.branch.location, r.branch.phone, r.branch.operating_hours]
+      );
+    }
+
+    // 2. Create the Admin User (assigned to Burger Craft Lab)
     const email = 'admin@example.com';
     const password = 'password123';
     const hashedPassword = await hashPassword(password);
@@ -111,7 +207,7 @@ async function main() {
        VALUES (?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE email=email`,
       [
-        restaurantId,
+        burgerCraftLabId,
         'System Admin',
         email,
         hashedPassword,
@@ -121,11 +217,16 @@ async function main() {
       ]
     );
 
-    console.log(`\n✅ Default admin user successfully created!`);
+    console.log(`\n✅ Default admin user and 5 restaurants created!`);
     console.log(`-----------------------------------------------`);
     console.log(`Login Email:    ${email}`);
     console.log(`Login Password: ${password}`);
-    console.log(`Restaurant URL:  https://menuversebd.com/sakurasushibar`);
+    console.log(`URLs:`);
+    console.log(`  - https://menuversebd.com/burgercraftlab`);
+    console.log(`  - https://menuversebd.com/sakurasushibar`);
+    console.log(`  - https://menuversebd.com/ladolcevita`);
+    console.log(`  - https://menuversebd.com/spicywok`);
+    console.log(`  - https://menuversebd.com/redchili`);
     console.log(`-----------------------------------------------`);
 
   } catch (err) {
