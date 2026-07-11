@@ -365,7 +365,7 @@ export default function SettingsPage() {
           type: "dots"
         },
         qrOptions: {
-          typeNumber: 0,
+          typeNumber: 4,
           mode: "Byte",
           errorCorrectionLevel: "M"
         },
