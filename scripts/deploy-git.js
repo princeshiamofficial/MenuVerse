@@ -15,7 +15,7 @@ conn.on('ready', () => {
     // Build Next.js app
     'npm run build',
     // Start or restart PM2 app
-    'pm2 restart menuverse-app || pm2 start "npm start -- -p 3000" --name "menuverse-app"',
+    'pm2 restart menuverse || pm2 start "npm start -- -p 3008" --name "menuverse"',
     'pm2 save'
   ].join(' && ');
 

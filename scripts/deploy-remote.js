@@ -38,7 +38,7 @@ conn.on('ready', () => {
         'unzip -o deploy-prod.zip',
         'rm deploy-prod.zip',
         'npm install --production',
-        'pm2 restart menuverse-app || pm2 start "npm start -- -p 3000" --name "menuverse-app"',
+        'pm2 restart menuverse || pm2 start "npm start -- -p 3008" --name "menuverse"',
         'pm2 save'
       ].join(' && ');
       

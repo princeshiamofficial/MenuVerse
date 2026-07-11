@@ -29,7 +29,7 @@ JWT_SECRET=super_secret_key_123456789_super_secret_key
     // Run database seeding script
     'node scripts/seed.js',
     // Restart PM2 app with --update-env to pick up the new env variables
-    'pm2 restart menuverse-app --update-env',
+    'pm2 restart menuverse --update-env',
     'pm2 save'
   ].join(' && ');
 
