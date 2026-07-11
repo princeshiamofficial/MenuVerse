@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import { RESTAURANTS, Branch } from "../data/restaurants";
+import BeautifulQRCode from "@/ui/BeautifulQRCode";
 import { 
   Menu, 
   Bell, 
@@ -186,51 +187,52 @@ export default function QrCodesPage() {
     }
   };
 
-  const downloadQrWithTableNo = (tableName: string, qrUrl: string) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 600;
-      canvas.height = 600;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+  const downloadQrWithTableNo = (tableName: string, targetUrl: string) => {
+    import("qr-code-styling").then((mod) => {
+      const cleanNum = tableName.replace("Table ", "");
+      const svgString = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="#ff7a00" stroke-width="6" />
+          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#0f172a" text-anchor="middle" dominant-baseline="central">
+            ${cleanNum}
+          </text>
+        </svg>
+      `;
+      const imageSrc = `data:image/svg+xml;utf8,${encodeURIComponent(svgString.trim())}`;
 
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 600, 600);
+      const qrCode = new mod.default({
+        width: 1000,
+        height: 1000,
+        type: "svg",
+        data: targetUrl,
+        image: imageSrc,
+        dotsOptions: {
+          color: "#0f172a",
+          type: "rounded"
+        },
+        backgroundOptions: {
+          color: "#ffffff",
+        },
+        imageOptions: {
+          crossOrigin: "anonymous",
+          margin: 5,
+          imageSize: 0.4
+        },
+        cornersSquareOptions: {
+          color: "#0f172a",
+          type: "extra-rounded"
+        },
+        cornersDotOptions: {
+          color: "#0f172a",
+          type: "dot"
+        }
+      });
 
-      ctx.drawImage(img, 20, 20, 560, 560);
-
-      const badgeSize = 140;
-      const badgeX = (600 - badgeSize) / 2;
-      const badgeY = (600 - badgeSize) / 2;
-
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      const r = 28; 
-      ctx.moveTo(badgeX, badgeY);
-      ctx.lineTo(badgeX + badgeSize - r, badgeY);
-      ctx.quadraticCurveTo(badgeX + badgeSize, badgeY, badgeX + badgeSize, badgeY + r);
-      ctx.lineTo(badgeX + badgeSize, badgeY + badgeSize);
-      ctx.lineTo(badgeX + r, badgeY + badgeSize);
-      ctx.quadraticCurveTo(badgeX, badgeY + badgeSize, badgeX, badgeY + badgeSize - r);
-      ctx.closePath();
-      ctx.fill();
-
-      const digits = tableName.replace("Table ", "");
-      ctx.fillStyle = "#1e293b"; 
-      ctx.font = "bold 60px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(digits, 600 / 2, 600 / 2);
-
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.href = dataUrl;
-      link.download = `${tableName.replace(" ", "_")}_QR.png`;
-      link.click();
-    };
-    img.src = qrUrl;
+      qrCode.download({
+        name: `${tableName.replace(" ", "_")}_QR`,
+        extension: "png"
+      });
+    });
   };
 
   return (
@@ -393,16 +395,7 @@ export default function QrCodesPage() {
                       </div>
 
                       <div className="p-1.5 rounded-tr-xl rounded-bl-xl rounded-tl-none rounded-br-none bg-white text-slate-900 shrink-0 border border-slate-200 shadow-inner w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center overflow-hidden hover:border-[#ff7a00] transition-colors duration-300 relative select-none">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={qrImageUrl} 
-                          alt={`${table.name} QR Code`}
-                          className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
-                        />
-                        {/* Center Table No Badge */}
-                        <div className="absolute w-6.5 h-6.5 rounded-tr-md rounded-bl-md bg-white flex items-center justify-center text-slate-800 font-extrabold text-[9px] select-none pointer-events-none">
-                          {table.name.replace("Table ", "")}
-                        </div>
+                        <BeautifulQRCode value={tableUrl} tableName={table.name} size={96} />
                       </div>
                       
                       <div className="flex flex-col gap-0.5 items-center w-full min-w-0">
@@ -449,16 +442,7 @@ export default function QrCodesPage() {
             {/* QR Card Body */}
             <div className="flex flex-col items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-6 text-center shadow-inner relative group">
               <div className="bg-white p-3 rounded-tr-2xl rounded-bl-2xl rounded-tl-none rounded-br-none border border-slate-200 shadow-md relative flex items-center justify-center select-none">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(previewQr.url)}`}
-                  alt={`${previewQr.name} QR Code`}
-                  className="w-48 h-48 object-contain"
-                />
-                {/* Center Table No Badge */}
-                <div className="absolute w-12 h-12 rounded-tr-2xl rounded-bl-2xl bg-white flex items-center justify-center text-slate-800 font-black text-sm select-none pointer-events-none">
-                  {previewQr.name.replace("Table ", "")}
-                </div>
+                <BeautifulQRCode value={previewQr.url} tableName={previewQr.name} size={180} />
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Scan to Open Menu</span>
@@ -475,7 +459,7 @@ export default function QrCodesPage() {
                 Close
               </button>
               <button
-                onClick={() => downloadQrWithTableNo(previewQr.name, `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(previewQr.url)}`)}
+                onClick={() => downloadQrWithTableNo(previewQr.name, previewQr.url)}
                 className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <FileText className="w-3.5 h-3.5" /> Download QR

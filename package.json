@@ -18,6 +18,8 @@
     "lucide-react": "^1.21.0",
     "mysql2": "^3.22.5",
     "next": "16.2.6",
+    "qr-code-styling": "^1.9.2",
+    "qrcode.react": "^4.2.0",
     "react": "19.2.4",
     "react-apple-emojis": "^3.0.0",
     "react-dom": "19.2.4",
