@@ -374,7 +374,8 @@ export default function SettingsPage() {
         }
       });
 
-      qrCode.getRawData("svg").then((blob: Blob) => {
+      qrCode.getRawData("svg").then((blob) => {
+        if (!blob || !(blob instanceof Blob)) return;
         const url = URL.createObjectURL(blob);
         const img = new Image();
         img.onload = () => {

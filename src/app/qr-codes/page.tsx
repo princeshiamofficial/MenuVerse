@@ -224,7 +224,8 @@ export default function QrCodesPage() {
       });
 
       // Get SVG blob → draw on canvas → overlay badge circle → download PNG
-      qrCode.getRawData("svg").then((blob: Blob) => {
+      qrCode.getRawData("svg").then((blob) => {
+        if (!blob || !(blob instanceof Blob)) return;
         const url = URL.createObjectURL(blob);
         const img = new Image();
         img.onload = () => {
