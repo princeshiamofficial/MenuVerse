@@ -192,8 +192,8 @@ export default function QrCodesPage() {
       const cleanNum = tableName.replace("Table ", "");
       const svgString = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="#000000" stroke-width="8" />
-          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#000000" text-anchor="middle" dominant-baseline="central">
+          <circle cx="50" cy="50" r="48" fill="#ffffff" />
+          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="46" fill="#000000" text-anchor="middle" dominant-baseline="central">
             ${cleanNum}
           </text>
         </svg>
@@ -215,7 +215,7 @@ export default function QrCodesPage() {
         qrOptions: {
           typeNumber: 0,
           mode: "Byte",
-          errorCorrectionLevel: "H"
+          errorCorrectionLevel: "M"
         },
         backgroundOptions: {
           color: "#ffffff",
