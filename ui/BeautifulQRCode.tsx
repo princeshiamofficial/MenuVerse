@@ -9,6 +9,19 @@ interface BeautifulQRCodeProps {
   size?: number;
 }
 
+/**
+ * Returns the minimum QR typeNumber that fits the given URL under Level M.
+ * Falls back to 0 (auto) if the URL is longer than Version 6 capacity.
+ * Version 4 = 78 bytes, Version 5 = 106 bytes, Version 6 = 134 bytes (Level M, binary mode).
+ */
+function getTypeNumber(url: string): number {
+  const bytes = new TextEncoder().encode(url).length;
+  if (bytes <= 78) return 4;
+  if (bytes <= 106) return 5;
+  if (bytes <= 134) return 6;
+  return 0; // auto — let the library choose
+}
+
 export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 }: BeautifulQRCodeProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [QRCodeStyling, setQRCodeStyling] = useState<any>(null);
@@ -29,13 +42,13 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
       margin: Math.round(size * 0.065),
       type: "svg",
       data: value,
-      // No image property — avoids version bump, allows typeNumber:4
+      // No image property — no version bump from embedded image
       dotsOptions: {
         color: "#000000",
         type: "dots"
       },
       qrOptions: {
-        typeNumber: 4,
+        typeNumber: getTypeNumber(value),
         mode: "Byte",
         errorCorrectionLevel: "M"
       },

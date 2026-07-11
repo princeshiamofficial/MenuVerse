@@ -194,6 +194,10 @@ export default function QrCodesPage() {
       const SIZE = 1000;
       const MARGIN = 65;
 
+      // Pick minimum version that fits the URL under Level M (no image bump)
+      const urlBytes = new TextEncoder().encode(targetUrl).length;
+      const typeNumber = urlBytes <= 78 ? 4 : urlBytes <= 106 ? 5 : urlBytes <= 134 ? 6 : 0;
+
       const qrCode = new Creator({
         width: SIZE,
         height: SIZE,
@@ -206,7 +210,7 @@ export default function QrCodesPage() {
           type: "dots"
         },
         qrOptions: {
-          typeNumber: 4,
+          typeNumber: typeNumber,
           mode: "Byte",
           errorCorrectionLevel: "M"
         },

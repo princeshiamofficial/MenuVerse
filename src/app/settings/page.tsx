@@ -346,6 +346,9 @@ export default function SettingsPage() {
       const SIZE = 1000;
       const MARGIN = 65;
 
+      const urlBytes = new TextEncoder().encode(targetUrl).length;
+      const typeNumber = urlBytes <= 78 ? 4 : urlBytes <= 106 ? 5 : urlBytes <= 134 ? 6 : 0;
+
       const qrCode = new Creator({
         width: SIZE,
         height: SIZE,
@@ -357,7 +360,7 @@ export default function SettingsPage() {
           type: "dots"
         },
         qrOptions: {
-          typeNumber: 4,
+          typeNumber: typeNumber,
           mode: "Byte",
           errorCorrectionLevel: "M"
         },
