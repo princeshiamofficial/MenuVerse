@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
-import BeautifulQRCode from "@/ui/BeautifulQRCode";
+import BeautifulQRCode from "../../../ui/BeautifulQRCode";
 import { 
   Menu, 
   Bell, 

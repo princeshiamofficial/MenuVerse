@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "../components/Sidebar";
 import { RESTAURANTS, Branch } from "../data/restaurants";
-import BeautifulQRCode from "@/ui/BeautifulQRCode";
+import BeautifulQRCode from "../../../ui/BeautifulQRCode";
 
 interface Table {
   name: string;
