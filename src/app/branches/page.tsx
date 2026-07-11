@@ -315,7 +315,7 @@ export default function BranchesPage() {
         qrOptions: {
           typeNumber: 0, // Auto — library selects minimum safe version
           mode: "Byte",
-          errorCorrectionLevel: "M"
+          errorCorrectionLevel: "L"
         },
         backgroundOptions: {
           color: "#ffffff",
