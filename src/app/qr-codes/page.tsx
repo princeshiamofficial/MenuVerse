@@ -41,6 +41,8 @@ export default function QrCodesPage() {
   const [userRole, setUserRole] = useState("admin");
   const [userDisplayName, setUserDisplayName] = useState("Color Hut Admin");
 
+  const [restaurantUsername, setRestaurantUsername] = useState("burgercraftlab");
+
   // Branch and Table states
   const [branches, setBranches] = useState<CustomBranch[]>([]);
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
@@ -75,19 +77,33 @@ export default function QrCodesPage() {
         setSelectedBranchId("dhanmondi");
       }
 
-      // Load branches
-      const restaurant = RESTAURANTS.find(r => r.id === 1);
-      const defaults = restaurant?.branches || [];
-      const storedBranchesStr = localStorage.getItem("restaurant_branches");
-      if (storedBranchesStr) {
-        try {
-          setBranches([...defaults, ...JSON.parse(storedBranchesStr)]);
-        } catch {
-          setBranches(defaults);
-        }
-      } else {
-        setBranches(defaults);
-      }
+      // Fetch restaurant details to get the correct username and branches
+      fetch("/api/tenant/restaurant-details")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.username) {
+            setRestaurantUsername(data.username);
+            
+            // Load branches for this specific restaurant from fallback or db
+            const restaurant = RESTAURANTS.find(r => r.id === data.id);
+            const defaults = restaurant?.branches || [];
+            const storedBranchesStr = localStorage.getItem(`restaurant_branches_${data.id}`);
+            if (storedBranchesStr) {
+              try {
+                setBranches([...defaults, ...JSON.parse(storedBranchesStr)]);
+              } catch {
+                setBranches(defaults);
+              }
+            } else {
+              setBranches(defaults);
+            }
+          }
+        })
+        .catch(err => {
+          console.error("Error loading restaurant details:", err);
+          const restaurant = RESTAURANTS.find(r => r.id === 1);
+          setBranches(restaurant?.branches || []);
+        });
 
       const currentOrigin = window.location.origin;
       requestAnimationFrame(() => {
@@ -342,7 +358,7 @@ export default function QrCodesPage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {getCurrentBranchTables().map((table: Table, i: number) => {
-                  const tableUrl = `${origin}/burgercraftlab?branch=${selectedBranchId}&table=${table.name.replace("Table ", "")}`;
+                  const tableUrl = `${origin}/${restaurantUsername}?branch=${selectedBranchId}&table=${table.name.replace("Table ", "")}`;
                   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(tableUrl)}`;
                   
                   return (

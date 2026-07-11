@@ -55,6 +55,7 @@ export default function BranchesPage() {
   const [branchFormTablesCount, setBranchFormTablesCount] = useState(2);
 
   // Table QR Code states (scoped to selected branch card)
+  const [restaurantUsername, setRestaurantUsername] = useState("burgercraftlab");
   const [selectedBranchId, setSelectedBranchId] = useState("dhanmondi");
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [qrModalMode, setQrModalMode] = useState<"add" | "edit">("add");
@@ -80,6 +81,16 @@ export default function BranchesPage() {
         router.replace("/dashboard");
         return;
       }
+
+      // Fetch restaurant details to get correct username
+      fetch("/api/tenant/restaurant-details")
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.username) {
+            setRestaurantUsername(data.username);
+          }
+        })
+        .catch(err => console.error("Error loading restaurant details:", err));
 
       // Load branches from database API
       fetch("/api/tenant/branches")
@@ -485,7 +496,7 @@ export default function BranchesPage() {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
                       {b.tables.map((table: Table, idx: number) => {
-                        const tableUrl = `${origin}/burgercraftlab?branch=${b.id}&table=${table.name.replace("Table ", "")}`;
+                        const tableUrl = `${origin}/${restaurantUsername}?branch=${b.id}&table=${table.name.replace("Table ", "")}`;
                         const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(tableUrl)}`;
                         
                         return (
