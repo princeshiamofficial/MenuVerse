@@ -4,34 +4,28 @@ const bcrypt = require('bcryptjs');
 const fs = require('fs');
 const path = require('path');
 
-// Helper to manually parse .env and .env.local files
+// Helper to manually parse .env.local file
 function loadEnv() {
-  const envFiles = ['.env', '.env.local'];
-  let loaded = false;
-  envFiles.forEach(file => {
-    const envPath = path.join(__dirname, '..', file);
-    if (fs.existsSync(envPath)) {
-      const content = fs.readFileSync(envPath, 'utf8');
-      content.split('\n').forEach(line => {
-        const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
-        if (match) {
-          const key = match[1];
-          let value = match[2] || '';
-          // Remove quotes if present
-          if (value.startsWith('"') && value.endsWith('"')) {
-            value = value.slice(1, -1);
-          } else if (value.startsWith("'") && value.endsWith("'")) {
-            value = value.slice(1, -1);
-          }
-          process.env[key] = value.trim();
+  const envPath = path.join(__dirname, '..', '.env.local');
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    content.split('\n').forEach(line => {
+      const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+      if (match) {
+        const key = match[1];
+        let value = match[2] || '';
+        // Remove quotes if present
+        if (value.startsWith('"') && value.endsWith('"')) {
+          value = value.slice(1, -1);
+        } else if (value.startsWith("'") && value.endsWith("'")) {
+          value = value.slice(1, -1);
         }
-      });
-      console.log(`Loaded configurations from ${file}`);
-      loaded = true;
-    }
-  });
-  if (!loaded) {
-    console.warn('.env / .env.local not found. Using system environment variables.');
+        process.env[key] = value.trim();
+      }
+    });
+    console.log('Loaded configurations from .env.local');
+  } else {
+    console.warn('.env.local not found. Using system environment variables.');
   }
 }
 
@@ -419,20 +413,15 @@ async function main() {
     host: MYSQL_HOST,
     port: parseInt(MYSQL_PORT.toString(), 10),
     user: MYSQL_USER,
-    password: MYSQL_PASSWORD,
-    database: MYSQL_DATABASE
+    password: MYSQL_PASSWORD
   });
 
   console.log('Connected to MySQL server.');
 
-  // Create database (optional, ignore permission errors)
-  try {
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\``);
-  } catch (err) {
-    console.log(`Note: Could not run CREATE DATABASE (this is normal if database "${MYSQL_DATABASE}" already exists or you have restricted permissions).`);
-  }
+  // Create database
+  await connection.query(`CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\``);
   await connection.query(`USE \`${MYSQL_DATABASE}\``);
-  console.log(`Database "${MYSQL_DATABASE}" selected.`);
+  console.log(`Database "${MYSQL_DATABASE}" created or selected.`);
 
   // Load and execute schema
   const schemaPath = path.join(__dirname, 'schema.sql');

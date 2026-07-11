@@ -9,7 +9,7 @@ conn.on('ready', () => {
 MYSQL_PORT=3306
 MYSQL_USER=menu_admin
 MYSQL_PASSWORD=C0l0rHu7@456
-MYSQL_DATABASE=menu_verse
+MYSQL_DATABASE=menu_menuverse
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=super_secret_key_123456789_super_secret_key
 `;
