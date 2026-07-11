@@ -16,7 +16,7 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
   useEffect(() => {
     // Dynamic import to avoid SSR errors
     import("qr-code-styling").then((mod) => {
-      setQRCodeStyling(mod);
+      setQRCodeStyling(() => mod);
     });
   }, []);
 
