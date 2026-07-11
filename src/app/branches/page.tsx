@@ -298,10 +298,10 @@ export default function BranchesPage() {
   const downloadQrWithTableNo = (tableName: string, targetUrl: string) => {
     import("qr-code-styling").then((mod) => {
       const cleanNum = tableName.replace("Table ", "");
-      const svgString = `
+       const svgString = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="#ff7a00" stroke-width="6" />
-          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#0f172a" text-anchor="middle" dominant-baseline="central">
+          <circle cx="50" cy="50" r="46" fill="#ffffff" stroke="#000000" stroke-width="8" />
+          <text x="50" y="52" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" fill="#000000" text-anchor="middle" dominant-baseline="central">
             ${cleanNum}
           </text>
         </svg>
@@ -312,11 +312,12 @@ export default function BranchesPage() {
       const qrCode = new Creator({
         width: 1000,
         height: 1000,
+        margin: 40,
         type: "svg",
         data: targetUrl,
         image: imageSrc,
         dotsOptions: {
-          color: "#0f172a",
+          color: "#000000",
           type: "dots"
         },
         qrOptions: {
@@ -329,15 +330,15 @@ export default function BranchesPage() {
         },
         imageOptions: {
           crossOrigin: "anonymous",
-          margin: 5,
-          imageSize: 0.4
+          margin: 10,
+          imageSize: 0.22
         },
         cornersSquareOptions: {
-          color: "#0f172a",
+          color: "#000000",
           type: "extra-rounded"
         },
         cornersDotOptions: {
-          color: "#0f172a",
+          color: "#000000",
           type: "dot"
         }
       });
