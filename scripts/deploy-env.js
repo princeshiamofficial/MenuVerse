@@ -7,9 +7,9 @@ conn.on('ready', () => {
 
   const envContent = `MYSQL_HOST=localhost
 MYSQL_PORT=3306
-MYSQL_USER=menu_admin
+MYSQL_USER=menu_verse
 MYSQL_PASSWORD=C0l0rHu7@456
-MYSQL_DATABASE=menu_menuverse
+MYSQL_DATABASE=menu_verse
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=super_secret_key_123456789_super_secret_key
 `;
@@ -21,8 +21,6 @@ JWT_SECRET=super_secret_key_123456789_super_secret_key
     'cd /home/menuversebd.com/public_html',
     // Write .env
     `printf "${escapedEnvContent}" > .env`,
-    // Write .env.local (since scripts/seed.js specifically checks for .env.local)
-    `printf "${escapedEnvContent}" > .env.local`,
     // Modify scripts/schema.sql on server to comment out hardcoded database statements
     "sed -i 's/^CREATE DATABASE IF NOT EXISTS digital_food_menu;/-- CREATE DATABASE IF NOT EXISTS digital_food_menu;/g' scripts/schema.sql",
     "sed -i 's/^USE digital_food_menu;/-- USE digital_food_menu;/g' scripts/schema.sql",
