@@ -319,6 +319,11 @@ export default function BranchesPage() {
           color: "#0f172a",
           type: "dots"
         },
+        qrOptions: {
+          typeNumber: 6,
+          mode: "Byte",
+          errorCorrectionLevel: "H"
+        },
         backgroundOptions: {
           color: "#ffffff",
         },

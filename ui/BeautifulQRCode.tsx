@@ -56,6 +56,11 @@ export default function BeautifulQRCode({ value, tableName, logoUrl, size = 150 
         color: "#0f172a",
         type: "dots"
       },
+      qrOptions: {
+        typeNumber: 6,
+        mode: "Byte",
+        errorCorrectionLevel: "H"
+      },
       backgroundOptions: {
         color: "#ffffff",
       },
