@@ -1050,6 +1050,8 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                         ? 'flex flex-col gap-3'
                         : layoutType === 'compact'
                         ? 'grid grid-cols-1 gap-2'
+                        : layoutType === 'masonry'
+                        ? 'columns-2 sm:columns-2 md:columns-3 lg:columns-4 gap-3 sm:gap-4 space-y-3 sm:space-y-4 [column-fill:_balance]'
                         : 'grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4'
                     }`}>
                       {filteredItems.map((item: MenuItem) => {
@@ -1179,7 +1181,99 @@ export default function RestaurantMenuPage({ params }: PageProps) {
                           );
                         }
 
-                        // ──── 3. GRID LAYOUT (DEFAULT) ───────────────────────────────
+                        // ──── 3. MASONRY LAYOUT ──────────────────────────────────────
+                        if (layoutType === 'masonry') {
+                          return (
+                            <div key={item.id} className="break-inside-avoid inline-block w-full mb-3 sm:mb-4">
+                              <div className="flex flex-col h-full group food-card text-left">
+                                {/* Card 1: Details Card (Image, Title, Description) */}
+                                <div className="grow flex flex-col bg-white rounded-t-2xl rounded-br-2xl border border-neutral-200/80 border-b-0 shadow-sm hover:shadow-[0_6px_20px_rgba(0,0,0,0.025)] transition-all duration-300">
+                                  {/* Food Photo Box */}
+                                  <div className="relative w-full aspect-4/3 shrink-0 bg-neutral-100 overflow-hidden rounded-t-2xl">
+                                    <Image
+                                      src={item.image}
+                                      alt={item.name}
+                                      fill
+                                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                      sizes="(max-width: 640px) 180px, 240px"
+                                    />
+                                    {item.popular && (
+                                      <div className="absolute top-2.5 left-2.5 bg-amber-500 text-white text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full z-10 shadow-sm">
+                                        Popular
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Food Info details */}
+                                  <div className="grow p-3.5 flex flex-col justify-between">
+                                    <div>
+                                      <h4 className="text-sm sm:text-base font-bold text-neutral-900 truncate">
+                                        {item.name}
+                                      </h4>
+                                      <p className="text-[11px] sm:text-xs text-neutral-500 font-semibold leading-relaxed mt-1">
+                                        {item.description}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Card 2: Two horizontal cards — Price card & Button card */}
+                                <div className="flex gap-1">
+                                  {/* Price Card */}
+                                  <div className="flex-1 bg-white rounded-b-2xl border border-t-0 border-neutral-200/80 shadow-sm flex items-center justify-center h-10 px-3 group-hover:border-neutral-300 transition-colors duration-300">
+                                    <span className="text-xs sm:text-sm font-black text-deep-emerald-950">
+                                      ${item.price.toFixed(2)}
+                                    </span>
+                                  </div>
+
+                                  {/* Button Card */}
+                                  <div className="mt-1 bg-white rounded-xl rounded-tl-none border border-neutral-200/80 shadow-sm flex items-center justify-center h-10 group-hover:border-neutral-300 transition-colors duration-300 btn-bubble">
+                                    {qtyInCart > 0 ? (
+                                      <div className="flex items-center gap-1.5 px-2.5">
+                                        <button
+                                          onClick={() => {
+                                            removeFromCart(item.id);
+                                          }}
+                                          className="w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-colors text-white"
+                                          style={{ backgroundColor: `${primaryColor}22`, color: primaryColor }}
+                                        >
+                                          <Minus className="w-2.5 h-2.5" />
+                                        </button>
+                                        <span className="text-xs font-black min-w-[14px] text-center" style={{ color: primaryColor }}>
+                                          {qtyInCart}
+                                        </span>
+                                        <button
+                                          onClick={(e) => {
+                                            triggerBubbleEffect(e);
+                                            addToCart(item.id);
+                                          }}
+                                          className="w-5 h-5 rounded-full text-white flex items-center justify-center cursor-pointer transition-all duration-200"
+                                          style={{ backgroundColor: primaryColor }}
+                                        >
+                                          <Plus className="w-2.5 h-2.5 relative z-10" />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        onClick={(e) => {
+                                          triggerBubbleEffect(e);
+                                          addToCart(item.id);
+                                        }}
+                                        className="w-10 h-full flex items-center justify-center bg-transparent hover:scale-110 transition-all duration-200 cursor-pointer active:scale-95"
+                                        style={{ color: primaryColor }}
+                                        title="Add to Cart"
+                                      >
+                                        <Plus className="w-3.5 h-3.5 relative z-10" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        // ──── 4. GRID LAYOUT (DEFAULT) ───────────────────────────────
                         return (
                           <div key={item.id} className="flex flex-col h-full group food-card">
                             {/* Card 1: Details Card (Image, Title, Description) */}

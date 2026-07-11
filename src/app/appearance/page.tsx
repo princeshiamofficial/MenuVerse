@@ -39,7 +39,8 @@ const FONT_PRESETS = [
 const LAYOUT_PRESETS = [
   { name: "Grid Layout (Visual)", value: "grid", description: "Multi-column grids with large item photos." },
   { name: "List Layout (Descriptive)", value: "list", description: "Single-column full width list descriptions." },
-  { name: "Compact Layout (Minimalist)", value: "compact", description: "Ultra-fast text lines, perfect for dense lists." }
+  { name: "Compact Layout (Minimalist)", value: "compact", description: "Ultra-fast text lines, perfect for dense lists." },
+  { name: "Masonry Layout (Dynamic)", value: "masonry", description: "Staggered multi-column grid, perfect for varying description lengths." }
 ];
 
 export default function AppearancePage() {
@@ -518,6 +519,38 @@ export default function AppearancePage() {
                               >
                                 +
                               </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {layoutType === "masonry" && (
+                      <div className="columns-2 gap-2.5 [column-fill:_balance]">
+                        {[
+                          { name: "Smash Burger Duo", price: "$12.99", desc: "Double patty premium blend with cheddar cheese and onions.", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=200&auto=format&fit=crop&q=80" },
+                          { name: "Fries Basket", price: "$4.50", desc: "Crispy seasoned golden potatoes.", img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=200&auto=format&fit=crop&q=80" },
+                          { name: "Vanilla Milkshake", price: "$5.99", desc: "Creamy vanilla ice cream blended with fresh milk, topped with whipped cream.", img: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=200&auto=format&fit=crop&q=80" }
+                        ].map(item => (
+                          <div key={item.name} className="break-inside-avoid inline-block w-full mb-2.5 bg-white border border-slate-100 rounded-xl overflow-hidden shadow-xs flex flex-col">
+                            <div className="w-full h-12 bg-neutral-200 overflow-hidden relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="p-2 flex-1 flex flex-col justify-between gap-1.5">
+                              <div>
+                                <h5 className="text-[9px] font-bold text-slate-900 line-clamp-1">{item.name}</h5>
+                                <p className="text-[7px] text-slate-400 line-clamp-4 mt-0.5 leading-snug">{item.desc}</p>
+                              </div>
+                              <div className="flex items-center justify-between mt-0.5 pt-1.5 border-t border-slate-55 border-dashed">
+                                <span className="text-[9px] font-bold text-slate-800">{item.price}</span>
+                                <span 
+                                  className="w-4 h-4 rounded-full text-white flex items-center justify-center font-bold text-[10px] cursor-pointer"
+                                  style={{ backgroundColor: primaryColor }}
+                                >
+                                  +
+                                </span>
+                              </div>
                             </div>
                           </div>
                         ))}
