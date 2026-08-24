@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: amenuverse-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: amenuverse
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amenuverse-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+      MYSQL_PASSWORD: rootpassword
+      MYSQL_DATABASE: amenuverse
+      VITE_IMGBB_API_KEY: 61035b18442b2c9815d6945f6f7bccd2
+      # ⚠️ Change this to a long random secret in production!
+      JWT_SECRET: super_secret_key_123456789_super_secret_key
+      VITE_JWT_SECRET: super_secret_key_123456789_super_secret_key
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

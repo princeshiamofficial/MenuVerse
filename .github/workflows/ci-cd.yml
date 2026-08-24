@@ -1,0 +1,296 @@
+name: aMenuVerse CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master, dev]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Nightly security & dependency scan at 02:00 UTC
+    - cron: "0 2 * * *"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# ─── Jobs ──────────────────────────────────────────────────────────────────────
+
+jobs:
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 1: Static Analysis (TypeScript + ESLint + Prettier)
+  # ────────────────────────────────────────────────────────────────────────────
+  static-analysis:
+    name: 🔍 TypeScript & ESLint
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔷 TypeScript type checking
+        run: npx tsc --noEmit
+
+      - name: 🧹 ESLint — code rules & formatting
+        run: npx eslint .
+
+      - name: 💅 Prettier — formatting check
+        run: npx prettier --check .
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 2: Unit Tests (security sanitizers, utility functions, Zod schemas)
+  # ────────────────────────────────────────────────────────────────────────────
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    needs: static-analysis
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🛡️ Security sanitization & file validation tests
+        run: node --import tsx/esm scripts/security-test.js
+
+      - name: 🗄️ Migration schema integrity check
+        run: node --import tsx/esm scripts/validate-migrations.js
+
+      - name: 💾 Backup & restore integrity test
+        run: node --import tsx/esm scripts/backup-restore-test.js
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 3: Integration Tests (RBAC, price calc, Zod schemas, tenant isolation)
+  # Runs WITHOUT live database — pure contract validation
+  # ────────────────────────────────────────────────────────────────────────────
+  integration-tests:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    needs: static-analysis
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔗 Integration test suite
+        run: npx tsx scripts/integration-test.ts
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 4: Database Integration (with real MySQL service container)
+  # ────────────────────────────────────────────────────────────────────────────
+  database-tests:
+    name: 🗄️ Database Migration & Schema Tests
+    runs-on: ubuntu-latest
+    needs: static-analysis
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: amenuverse_test
+          MYSQL_USER: menuverse_app
+          MYSQL_PASSWORD: apppassword
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: menuverse_app
+      MYSQL_PASSWORD: apppassword
+      MYSQL_DATABASE: amenuverse_test
+      SESSION_SECRET: ci-test-session-secret-replace-in-prod
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: ⏳ Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping -h 127.0.0.1 -u menuverse_app -papppassword --silent && break
+            echo "Waiting for MySQL... attempt $i"
+            sleep 2
+          done
+
+      - name: 🗄️ Run database migration validation
+        run: node --import tsx/esm scripts/validate-migrations.js
+
+      - name: 🏗️ Apply schema (create-db.js idempotent DDL)
+        run: node create-db.js
+        env:
+          MYSQL_PASSWORD: apppassword
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 5: Security Tests (dependency scan + secret detection + pen tests)
+  # ────────────────────────────────────────────────────────────────────────────
+  security-tests:
+    name: 🔐 Security & Dependency Scan
+    runs-on: ubuntu-latest
+    needs: static-analysis
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 📦 npm audit — HIGH/CRITICAL vulnerabilities fail build
+        run: npm audit --audit-level=high
+
+      - name: 🔍 Comprehensive dependency & secrets scan
+        run: npx tsx scripts/dependency-scan.ts
+
+      - name: 🛡️ XSS, MIME, payload penetration tests
+        run: node --import tsx/esm scripts/security-test.js
+
+      - name: 📄 Upload security scan report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-report
+          path: .reports/dependency-scan.json
+          retention-days: 30
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 6: Build verification
+  # ────────────────────────────────────────────────────────────────────────────
+  build:
+    name: 🏗️ Production Build
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, security-tests]
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🏗️ Production build
+        run: npm run build
+        env:
+          VITE_IMGBB_API_KEY: ${{ secrets.VITE_IMGBB_API_KEY }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+
+      - name: 📦 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: .output/
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 7: Deployment (only on push to main/master, all checks green)
+  # ────────────────────────────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, database-tests]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: .output/
+
+      # ── Replace the step below with your actual deployment method ──────────
+      # Examples: Railway, Render, VPS SSH, Docker push, Vercel CLI, etc.
+      - name: 🚀 Deploy notification
+        run: |
+          echo "✅ All CI checks passed — ready for deployment"
+          echo "Build SHA: ${{ github.sha }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Actor: ${{ github.actor }}"
+          # Add your deployment command here, e.g.:
+          # ssh deploy@your-server "cd /app && git pull && pm2 restart amenuverse"
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 8: Monitoring Health Check (post-deploy verification)
+  # ────────────────────────────────────────────────────────────────────────────
+  health-check:
+    name: 🏥 Post-Deploy Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: ⏳ Wait 30s for deployment to stabilize
+        run: sleep 30
+
+      - name: 🏥 Health endpoint check
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${{ secrets.PRODUCTION_URL }}/api/health" \
+            --max-time 15 || echo "000")
+          echo "Health endpoint status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "❌ Health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "✅ Health check passed"
+
+      - name: 🔔 Notify team on failure
+        if: failure()
+        run: |
+          echo "⚠️ Post-deploy health check FAILED for ${{ github.sha }}"
+          # Add Slack/Discord/email webhook here:
+          # curl -X POST "${{ secrets.SLACK_WEBHOOK }}" \
+          #   -H "Content-Type: application/json" \
+          #   -d '{"text": "❌ aMenuVerse health check failed after deploy!"}'

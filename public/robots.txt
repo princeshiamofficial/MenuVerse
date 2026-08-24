@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+Disallow: /auth
+Disallow: /dashboard
+Disallow: /branches
+Disallow: /categories
+Disallow: /color-hut
+Disallow: /customer-features
+Disallow: /feedback
+Disallow: /food-items
+Disallow: /menu
+Disallow: /orders
+Disallow: /qr-menu
+Disallow: /restaurant-profile
+Disallow: /settings
+Disallow: /subscription
+Disallow: /super-admin
+Disallow: /analytics
+Disallow: /ai-assistant
